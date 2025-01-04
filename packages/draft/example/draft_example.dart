@@ -1,4 +1,4 @@
-import 'package:immer/immer.dart';
+import 'package:draft/draft.dart';
 
 void main() {
   var awesome = Awesome();
