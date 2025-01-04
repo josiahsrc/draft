@@ -5,6 +5,5 @@ void main() {
   print('awesome: ${awesome.isAwesome}');
 }
 
-class Something { 
-
-}
+@Hello()
+class Something {}

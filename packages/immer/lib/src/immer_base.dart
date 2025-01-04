@@ -7,11 +7,24 @@ class Awesome {
   bool get isAwesome => true;
 }
 
-// macro class Hello implements ClassDeclarationsMacro {
-//   const Hello();
+macro class Hello implements ClassDeclarationsMacro {
+  const Hello();
 
-//   @override
-//   void buildDeclarationsForClass(ClassDeclaration clazz, MemberDeclarationBuilder builder) {
-//     print('Hello, World');
-//   }
-// }
+  @override
+  Future<void> buildDeclarationsForClass(
+    ClassDeclaration clazz,
+    MemberDeclarationBuilder builder,
+  ) async {
+    // final fields = await builder.fieldsOf(clazz);
+    // final fieldsString = fields.map((f) => f.identifier.name).join(', ');
+
+    builder.declareInType(
+      DeclarationCode.fromParts([
+        'void hello2()',
+        '{',
+        '  print("Hello, World!");',
+        '}',
+      ]),
+    );
+  }
+}
