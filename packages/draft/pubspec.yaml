@@ -1,6 +1,7 @@
 name: draft
-description: A starting point for Dart libraries or applications.
+description: Immer, but for dart
 version: 0.0.1
+homepage: https://github.com/josiahsrc/draft
 
 environment:
   sdk: ^3.6.0
