@@ -25,9 +25,9 @@ void testIt() {
 
   print(foo2.fieldB); // c
 
-  final foo5 = foo.draft();
-  foo5.fieldB = 'd';
-  foo5.fieldA = 'e' * 5;
+  final foo5 = foo.draft()
+    ..fieldB = 'd'
+    ..fieldA = 'e' * 5;
 
   print(foo5.save());
 }

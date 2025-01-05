@@ -3,6 +3,6 @@
 /// More dartdocs go here.
 library;
 
-export 'src/draft_base.dart';
+export 'src/macro.dart';
 
 // TODO: Export any libraries intended for clients of this package.
