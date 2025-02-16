@@ -55,23 +55,38 @@ class DataFieldsDraft implements DataFields {
   Map<String, String> map;
   List<String> list;
   Set<String> set;
+  Set<String>? nullableSet;
+  Map<String, String>? nullableMap;
+  List<String>? nullableList;
   String? nullableString;
 
   DataFieldsDraft(
       {required this.map,
       required this.list,
       required this.set,
+      required this.nullableSet,
+      required this.nullableMap,
+      required this.nullableList,
       required this.nullableString});
 
   DataFields save() => DataFields(
-      map: map, list: list, set: set, nullableString: nullableString);
+      map: Map.from(map),
+      list: List.from(list),
+      set: Set.from(set),
+      nullableSet: nullableSet == null ? null : Set.from(nullableSet!),
+      nullableMap: nullableMap == null ? null : Map.from(nullableMap!),
+      nullableList: nullableList == null ? null : List.from(nullableList!),
+      nullableString: nullableString);
 }
 
 extension DataFieldsDraftExtension on DataFields {
   DataFieldsDraft draft() => DataFieldsDraft(
-      map: this.map,
-      list: this.list,
-      set: this.set,
+      map: Map.from(this.map),
+      list: List.from(this.list),
+      set: Set.from(this.set),
+      nullableSet: nullableSet == null ? null : Set.from(this.nullableSet!),
+      nullableMap: nullableMap == null ? null : Map.from(this.nullableMap!),
+      nullableList: nullableList == null ? null : List.from(this.nullableList!),
       nullableString: this.nullableString);
 
   DataFields produce(void Function(DataFieldsDraft draft) update) {

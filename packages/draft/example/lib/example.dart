@@ -35,6 +35,9 @@ class DataFields {
   final Map<String, String> map;
   final List<String> list;
   final Set<String> set;
+  final Set<String>? nullableSet;
+  final Map<String, String>? nullableMap;
+  final List<String>? nullableList;
   final String? nullableString;
 
   const DataFields({
@@ -42,6 +45,9 @@ class DataFields {
     required this.list,
     required this.set,
     required this.nullableString,
+    required this.nullableSet,
+    required this.nullableMap,
+    required this.nullableList,
   });
 }
 
@@ -73,6 +79,9 @@ void main() {
       list: ['a', 'b'],
       set: {'a', 'b'},
       nullableString: null,
+      nullableSet: null,
+      nullableMap: null,
+      nullableList: null,
     ),
   );
 
@@ -83,6 +92,7 @@ void main() {
     draft.coolInner.inner.field = 100;
     draft.dataFields.map['a'] = 'c';
     draft.dataFields.list.add('c');
+    draft.dataFields.nullableList = ['d', 'e'];
   });
 
   print(foo2.fieldB); // c
@@ -94,6 +104,9 @@ void main() {
   print(foo2.dataFields.list); // [a, b, c]
   print(foo2.dataFields.set); // {a, b}
   print(foo2.dataFields.nullableString); // null
+  print(foo2.dataFields.nullableSet); // null
+  print(foo2.dataFields.nullableMap); // null
+  print(foo2.dataFields.nullableList); // [d, e]
 
   final foo5 = foo.draft()
     ..fieldB = 'd'

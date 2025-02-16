@@ -1,9 +1,15 @@
 import 'dart:async';
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
 import 'package:draft_annotation/draft_annotation.dart';
+
+extension on DartType {
+  String getCodeName([String suffix = '']) => '${getDisplayString()}$suffix';
+}
 
 class DraftGenerator extends GeneratorForAnnotation<Draft> {
   @override
@@ -31,29 +37,117 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     final List<String> extensionFieldInitializers = [];
 
     for (final field in fields) {
-      bool isDraftable = false;
+      final isNullable =
+          field.type.nullabilitySuffix == NullabilitySuffix.question;
+
+      // Branch: if field type itself is annotated with @Draft.
+      bool isDirectDraftable = false;
       if (field.type.element is ClassElement) {
         final fieldClass = field.type.element as ClassElement;
-        isDraftable = fieldClass.metadata.any((m) =>
+        isDirectDraftable = fieldClass.metadata.any((m) =>
             m.element?.enclosingElement3?.name == 'Draft' ||
             m.element?.name == 'draft');
       }
-      if (isDraftable) {
-        final originalType = field.type.getDisplayString();
-        final nestedType = '${originalType}Draft';
+      if (isDirectDraftable) {
+        final originalType = field.type.getCodeName();
+        final nestedType = field.type.getCodeName('Draft');
         // Declare backing field, getter and setter.
         nestedFieldDeclarations.add('  $nestedType _${field.name};');
-        nestedFieldDeclarations.add('  $nestedType get ${field.name} => _${field.name};');
-        nestedFieldDeclarations.add('  set ${field.name}($originalType value) => _${field.name} = value.draft();');
+        nestedFieldDeclarations
+            .add('  $nestedType get ${field.name} => _${field.name};');
+        nestedFieldDeclarations.add(
+            '  set ${field.name}($originalType value) => _${field.name} = value.draft();');
         // Constructor gets the nested draft.
         constructorParams.add('required $nestedType ${field.name}');
         constructorInitializers.add('_${field.name} = ${field.name}');
         // In save, call the nested draft's save.
         saveArgumentsList.add('${field.name}: ${field.name}.save()');
         // In extension, initialize by drafting the nested object.
-        extensionFieldInitializers.add('${field.name}: this.${field.name}.draft()');
+        extensionFieldInitializers
+            .add('${field.name}: this.${field.name}.draft()');
+      } else if (field.type.isDartCoreList ||
+          field.type.isDartCoreSet ||
+          field.type.isDartCoreMap) {
+        // Handle collection types.
+        final type = field.type.getCodeName();
+        normalFieldDeclarations.add('  $type ${field.name};');
+        constructorParams.add('required this.${field.name}');
+        // Determine generic draftability.
+        bool isGenericDraftable = false;
+        if (field.type is ParameterizedType) {
+          final typeArgs = (field.type as ParameterizedType).typeArguments;
+          if (field.type.isDartCoreMap && typeArgs.length == 2) {
+            final valueType = typeArgs[1];
+            if (valueType.element is ClassElement) {
+              final valueClass = valueType.element as ClassElement;
+              isGenericDraftable = valueClass.metadata.any((m) =>
+                  m.element?.enclosingElement3?.name == 'Draft' ||
+                  m.element?.name == 'draft');
+            }
+          } else if (typeArgs.isNotEmpty) {
+            final itemType = typeArgs.first;
+            if (itemType.element is ClassElement) {
+              final itemClass = itemType.element as ClassElement;
+              isGenericDraftable = itemClass.metadata.any((m) =>
+                  m.element?.enclosingElement3?.name == 'Draft' ||
+                  m.element?.name == 'draft');
+            }
+          }
+        }
+        // Extension initializer conversion (object -> draft)
+        if (field.type.isDartCoreList) {
+          if (isGenericDraftable) {
+            extensionFieldInitializers.add(
+                "${field.name}: this.${field.name}.map((e) => e.draft()).toList()");
+            saveArgumentsList.add(
+                "${field.name}: ${field.name}.map((e) => e.save()).toList()");
+          } else if (!isNullable) {
+            extensionFieldInitializers
+                .add("${field.name}: List.from(this.${field.name})");
+            saveArgumentsList.add("${field.name}: List.from(${field.name})");
+          } else {
+            extensionFieldInitializers.add(
+                "${field.name}: ${field.name} == null ? null : List.from(this.${field.name}!)");
+            saveArgumentsList.add(
+                "${field.name}: ${field.name} == null ? null : List.from(${field.name}!)");
+          }
+        } else if (field.type.isDartCoreSet) {
+          if (isGenericDraftable) {
+            extensionFieldInitializers.add(
+                "${field.name}: this.${field.name}.map((e) => e.draft()).toSet()");
+            saveArgumentsList.add(
+                "${field.name}: ${field.name}.map((e) => e.save()).toSet()");
+          } else if (!isNullable) {
+            extensionFieldInitializers
+                .add("${field.name}: Set.from(this.${field.name})");
+            saveArgumentsList.add("${field.name}: Set.from(${field.name})");
+          } else {
+            extensionFieldInitializers.add(
+                "${field.name}: ${field.name} == null ? null : Set.from(this.${field.name}!)");
+            saveArgumentsList.add(
+                "${field.name}: ${field.name} == null ? null : Set.from(${field.name}!)");
+          }
+        } else if (field.type.isDartCoreMap) {
+          // For Map, assume key remains unchanged.
+          if (isGenericDraftable) {
+            extensionFieldInitializers.add(
+                "${field.name}: this.${field.name}.map((k, v) => MapEntry(k, v.draft()))");
+            saveArgumentsList.add(
+                "${field.name}: ${field.name}.map((k, v) => MapEntry(k, v.save()))");
+          } else if (!isNullable) {
+            extensionFieldInitializers
+                .add("${field.name}: Map.from(this.${field.name})");
+            saveArgumentsList.add("${field.name}: Map.from(${field.name})");
+          } else {
+            extensionFieldInitializers.add(
+                "${field.name}: ${field.name} == null ? null : Map.from(this.${field.name}!)");
+            saveArgumentsList.add(
+                "${field.name}: ${field.name} == null ? null : Map.from(${field.name}!)");
+          }
+        }
       } else {
-        final type = field.type.getDisplayString();
+        // Plain field.
+        final type = field.type.getCodeName();
         normalFieldDeclarations.add('  $type ${field.name};');
         constructorParams.add('required this.${field.name}');
         saveArgumentsList.add('${field.name}: ${field.name}');
