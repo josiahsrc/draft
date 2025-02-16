@@ -1,6 +1,7 @@
-// TODO: Put public facing types in this file.
-
-/// Checks if you are awesome. Spoiler: you are.
-class Awesome {
-  bool get isAwesome => true;
+/// Annotation used to mark a class for draft generation.
+class Draft {
+  const Draft();
 }
+
+/// A constant instance of [Draft].
+const draft = Draft();

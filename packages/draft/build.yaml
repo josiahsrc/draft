@@ -1,0 +1,25 @@
+targets:
+  $default:
+    builders:
+      draft:
+        enabled: true
+        generate_for:
+          exclude:
+            - test
+            - example
+          include:
+            - test/integration/*
+            - test/integration/**/*
+      source_gen|combining_builder:
+        options:
+          ignore_for_file:
+            - "type=lint"
+
+builders:
+  draft:
+    import: "package:draft/builder.dart"
+    builder_factories: ["draftBuilder"]
+    build_extensions: {".dart": [".draft.dart"]}
+    auto_apply: dependents
+    build_to: source
+    runs_before: ["source_gen|combining_builder"]

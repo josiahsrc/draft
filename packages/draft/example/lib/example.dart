@@ -1,13 +1,8 @@
-import 'package:draft/draft.dart';
+import 'package:draft_annotation/draft_annotation.dart';
 
-part 'draft_example.draft.dart';
+part 'example.draft.dart';
 
-void main() {
-  var awesome = Awesome();
-  print('awesome: ${awesome.isAwesome}');
-}
-
-@Draft()
+@draft
 class Foo {
   final String fieldA;
   final String fieldB;
@@ -18,7 +13,7 @@ class Foo {
   });
 }
 
-void testIt() {
+void main() {
   final foo = Foo(fieldA: 'a', fieldB: 'b');
 
   final foo2 = foo.produce((draft) {
