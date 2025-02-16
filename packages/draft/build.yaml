@@ -19,7 +19,6 @@ builders:
   draft:
     import: "package:draft/builder.dart"
     builder_factories: ["draftBuilder"]
-    build_extensions: {".dart": [".draft.dart"]}
+    build_extensions: { ".dart": [".draft.dart"] }
     auto_apply: dependents
     build_to: source
-    runs_before: ["source_gen|combining_builder"]

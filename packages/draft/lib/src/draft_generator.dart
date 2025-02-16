@@ -61,12 +61,7 @@ extension ${className}DraftExtension on $className {
 ''';
 
     // Use the input file’s name for the part directive.
-    final inputFileName = buildStep.inputId.pathSegments.last;
     return '''
-// GENERATED CODE - DO NOT MODIFY BY HAND
-
-part of '$inputFileName';
-
 $draftClass
 
 $draftExtension
