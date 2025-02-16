@@ -13,7 +13,6 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     BuildStep buildStep,
   ) {
     if (element is! ClassElement) return '';
-
     final classElement = element;
     final className = classElement.name;
     final draftClassName = '${className}Draft';
@@ -23,34 +22,65 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
         .where((field) => !field.isStatic && field.isFinal)
         .toList();
 
-    // Generate mutable field declarations for the draft class.
-    final fieldDeclarations = fields.map((field) {
-      final type = field.type.getDisplayString();
-      return '  $type ${field.name};';
-    }).join('\n');
+    // Build lists for different code sections.
+    final List<String> normalFieldDeclarations = [];
+    final List<String> nestedFieldDeclarations = [];
+    final List<String> constructorParams = [];
+    final List<String> constructorInitializers = [];
+    final List<String> saveArgumentsList = [];
+    final List<String> extensionFieldInitializers = [];
 
-    // Create constructor parameter list with required keyword.
-    final constructorParams =
-        fields.map((field) => 'required this.${field.name}').join(', ');
+    for (final field in fields) {
+      bool isDraftable = false;
+      if (field.type.element is ClassElement) {
+        final fieldClass = field.type.element as ClassElement;
+        isDraftable = fieldClass.metadata.any((m) =>
+            m.element?.enclosingElement3?.name == 'Draft' ||
+            m.element?.name == 'draft');
+      }
+      if (isDraftable) {
+        final originalType = field.type.getDisplayString();
+        final nestedType = '${originalType}Draft';
+        // Declare backing field, getter and setter.
+        nestedFieldDeclarations.add('  $nestedType _${field.name};');
+        nestedFieldDeclarations.add('  $nestedType get ${field.name} => _${field.name};');
+        nestedFieldDeclarations.add('  set ${field.name}($originalType value) => _${field.name} = value.draft();');
+        // Constructor gets the nested draft.
+        constructorParams.add('required $nestedType ${field.name}');
+        constructorInitializers.add('_${field.name} = ${field.name}');
+        // In save, call the nested draft's save.
+        saveArgumentsList.add('${field.name}: ${field.name}.save()');
+        // In extension, initialize by drafting the nested object.
+        extensionFieldInitializers.add('${field.name}: this.${field.name}.draft()');
+      } else {
+        final type = field.type.getDisplayString();
+        normalFieldDeclarations.add('  $type ${field.name};');
+        constructorParams.add('required this.${field.name}');
+        saveArgumentsList.add('${field.name}: ${field.name}');
+        extensionFieldInitializers.add('${field.name}: this.${field.name}');
+      }
+    }
 
-    // Map draft fields back to the original class’s constructor arguments.
-    final saveArguments =
-        fields.map((field) => '${field.name}: ${field.name}').join(', ');
+    final fieldDeclarations = [
+      ...normalFieldDeclarations,
+      ...nestedFieldDeclarations,
+    ].join('\n');
 
     final draftClass = '''
-class $draftClassName {
+class $draftClassName implements $className {
 $fieldDeclarations
 
-  $draftClassName({$constructorParams});
+  $draftClassName({${constructorParams.join(', ')}})
+      ${constructorInitializers.isNotEmpty ? ': ' : ''}${constructorInitializers.join(', ')};
 
-  $className save() => $className($saveArguments);
+  $className save() => $className(${saveArgumentsList.join(', ')});
 }
 ''';
 
-    // Create extension methods for functional (produce) and builder (draft) styles.
     final draftExtension = '''
 extension ${className}DraftExtension on $className {
-  $draftClassName draft() => $draftClassName(${fields.map((f) => '${f.name}: this.${f.name}').join(', ')});
+  $draftClassName draft() => $draftClassName(
+      ${extensionFieldInitializers.join(',\n      ')});
 
   $className produce(void Function($draftClassName draft) update) {
     final draft = this.draft();
@@ -60,7 +90,6 @@ extension ${className}DraftExtension on $className {
 }
 ''';
 
-    // Use the input file’s name for the part directive.
     return '''
 $draftClass
 
