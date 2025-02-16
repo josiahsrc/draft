@@ -1,5 +1,7 @@
 import 'package:draft/draft.dart';
 
+part 'draft_example.draft.dart';
+
 void main() {
   var awesome = Awesome();
   print('awesome: ${awesome.isAwesome}');
