@@ -1,4 +1,4 @@
-import 'package:draft/draft.dart';
+import 'package:draft_annotation/draft_annotation.dart';
 
 void main() {
   var awesome = Awesome();
