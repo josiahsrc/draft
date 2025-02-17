@@ -34,7 +34,6 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     final List<String> normalFieldDeclarations = [];
     final List<String> nestedFieldDeclarations = [];
     final List<String> constructorParams = [];
-    final List<String> constructorInitializers = [];
     final List<String> saveArgumentsList = [];
     final List<String> extensionFieldInitializers = [];
 
@@ -51,17 +50,11 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
             m.element?.name == 'draft');
       }
       if (isDirectDraftable) {
-        final originalType = field.type.getCodeName();
         final nestedType = field.type.getCodeName('Draft');
         // Declare backing field, getter and setter.
-        nestedFieldDeclarations.add('  $nestedType _${field.name};');
-        nestedFieldDeclarations
-            .add('  $nestedType get ${field.name} => _${field.name};');
-        nestedFieldDeclarations.add(
-            '  set ${field.name}($originalType value) => _${field.name} = value.draft();');
+        nestedFieldDeclarations.add('  $nestedType ${field.name};');
         // Constructor gets the nested draft.
-        constructorParams.add('required $nestedType ${field.name}');
-        constructorInitializers.add('_${field.name} = ${field.name}');
+        constructorParams.add('required this.${field.name}');
         // In save, call the nested draft's save.
         saveArgumentsList.add('${field.name}: ${field.name}.save()');
         // In extension, initialize by drafting the nested object.
@@ -163,11 +156,10 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     ].join('\n');
 
     final draftClass = '''
-class $draftClassName implements $className {
+class $draftClassName {
 $fieldDeclarations
 
-  $draftClassName({${constructorParams.join(', ')}})
-      ${constructorInitializers.isNotEmpty ? ': ' : ''}${constructorInitializers.join(', ')};
+  $draftClassName({${constructorParams.join(', ')}});
 
   $className save() => $className(${saveArgumentsList.join(', ')});
 }

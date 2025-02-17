@@ -16,3 +16,9 @@ dev_dependencies:
   build_runner:
   draft:
     path: ../
+
+dependency_overrides:
+  draft_annotation:
+    path: ../../draft_annotation
+  draft:
+    path: ../

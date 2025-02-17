@@ -1,4 +1,3 @@
-// dart format width=80
 // coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint
@@ -10,14 +9,11 @@ part of 'example.dart';
 // DraftGenerator
 // **************************************************************************
 
-class CoolInnerDraft implements CoolInner {
+class CoolInnerDraft {
   int field;
-  InnerInnerInnerDraft _inner;
-  InnerInnerInnerDraft get inner => _inner;
-  set inner(InnerInnerInner value) => _inner = value.draft();
+  InnerInnerInnerDraft inner;
 
-  CoolInnerDraft({required this.field, required InnerInnerInnerDraft inner})
-      : _inner = inner;
+  CoolInnerDraft({required this.field, required this.inner});
 
   CoolInner save() => CoolInner(field: field, inner: inner.save());
 }
@@ -33,7 +29,7 @@ extension CoolInnerDraftExtension on CoolInner {
   }
 }
 
-class InnerInnerInnerDraft implements InnerInnerInner {
+class InnerInnerInnerDraft {
   int field;
 
   InnerInnerInnerDraft({required this.field});
@@ -51,7 +47,7 @@ extension InnerInnerInnerDraftExtension on InnerInnerInner {
   }
 }
 
-class DataFieldsDraft implements DataFields {
+class DataFieldsDraft {
   Map<String, String> map;
   List<String> list;
   Set<String> set;
@@ -96,25 +92,19 @@ extension DataFieldsDraftExtension on DataFields {
   }
 }
 
-class FooDraft implements Foo {
+class FooDraft {
   String fieldA;
   String fieldB;
   BoringInner boringInner;
-  CoolInnerDraft _coolInner;
-  CoolInnerDraft get coolInner => _coolInner;
-  set coolInner(CoolInner value) => _coolInner = value.draft();
-  DataFieldsDraft _dataFields;
-  DataFieldsDraft get dataFields => _dataFields;
-  set dataFields(DataFields value) => _dataFields = value.draft();
+  CoolInnerDraft coolInner;
+  DataFieldsDraft dataFields;
 
   FooDraft(
       {required this.fieldA,
       required this.fieldB,
       required this.boringInner,
-      required CoolInnerDraft coolInner,
-      required DataFieldsDraft dataFields})
-      : _coolInner = coolInner,
-        _dataFields = dataFields;
+      required this.coolInner,
+      required this.dataFields});
 
   Foo save() => Foo(
       fieldA: fieldA,

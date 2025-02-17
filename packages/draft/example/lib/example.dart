@@ -88,7 +88,8 @@ void main() {
   final foo2 = foo.produce((draft) {
     draft.fieldB = 'c';
     draft.coolInner.field += 3;
-    draft.coolInner = CoolInner(field: 4, inner: InnerInnerInner(field: 5));
+    draft.coolInner =
+        CoolInner(field: 4, inner: InnerInnerInner(field: 5)).draft();
     draft.coolInner.inner.field = 100;
     draft.dataFields.map['a'] = 'c';
     draft.dataFields.list.add('c');
