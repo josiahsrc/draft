@@ -1,1 +1,1 @@
-export 'src/draft.dart' show draft;
+export 'src/draft.dart';
