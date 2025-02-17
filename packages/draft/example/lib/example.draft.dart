@@ -78,7 +78,7 @@ class DataFieldsDraft implements DataFields {
 
   Set<String>? get nullableSet => _nullableSet;
   set nullableSet(Set<String>? value) =>
-      _nullableSet = value?.map((e) => e)?.toSet();
+      _nullableSet = value?.map((e) => e).toSet();
 
   Map<String, String>? get nullableMap => _nullableMap;
   set nullableMap(Map<String, String>? value) =>
@@ -86,7 +86,7 @@ class DataFieldsDraft implements DataFields {
 
   List<String>? get nullableList => _nullableList;
   set nullableList(List<String>? value) =>
-      _nullableList = value?.map((e) => e)?.toList();
+      _nullableList = value?.map((e) => e).toList();
 
   DataFieldsDraft(
       {required Map<String, String> map,
@@ -99,17 +99,17 @@ class DataFieldsDraft implements DataFields {
       : _map = map.map((k, v) => MapEntry(k, v)),
         _list = list.map((e) => e).toList(),
         _set = set.map((e) => e).toSet(),
-        _nullableSet = nullableSet?.map((e) => e)?.toSet(),
+        _nullableSet = nullableSet?.map((e) => e).toSet(),
         _nullableMap = nullableMap?.map((k, v) => MapEntry(k, v)),
-        _nullableList = nullableList?.map((e) => e)?.toList();
+        _nullableList = nullableList?.map((e) => e).toList();
 
   DataFields save() => DataFields(
       map: map.map((k, v) => MapEntry(k, v)),
       list: list.map((e) => e).toList(),
       set: set.map((e) => e).toSet(),
-      nullableSet: nullableSet?.map((e) => e)?.toSet(),
+      nullableSet: nullableSet?.map((e) => e).toSet(),
       nullableMap: nullableMap?.map((k, v) => MapEntry(k, v)),
-      nullableList: nullableList?.map((e) => e)?.toList(),
+      nullableList: nullableList?.map((e) => e).toList(),
       nullableString: nullableString);
 }
 

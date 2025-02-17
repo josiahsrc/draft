@@ -9,6 +9,4 @@ class BasicInt {
   BasicInt({
     required this.value,
   });
-
-  BasicInt.value(this.value);
 }

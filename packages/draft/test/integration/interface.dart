@@ -17,4 +17,6 @@ class Interface {
   int doubleValue() {
     return value * 2;
   }
+
+  int get tripleValue => value * 3;
 }

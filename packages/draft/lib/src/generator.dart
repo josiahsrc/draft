@@ -27,7 +27,13 @@ bool _isSet(DartType type) => type.isDartCoreSet;
 
 /// Returns the draft type name for a given type.
 /// For example, if the original is `Inner` then the draft type is `InnerDraft`.
-String _draftTypeName(String originalName) => '${originalName}Draft';
+String _draftTypeName(String originalName) {
+  if (originalName.endsWith('?')) {
+    return '${originalName.substring(0, originalName.length - 1)}Draft?';
+  }
+
+  return '${originalName}Draft';
+}
 
 /// Returns whether the type is nullable.
 bool _isNullable(DartType type) =>
@@ -35,17 +41,18 @@ bool _isNullable(DartType type) =>
 
 /// Recursively converts a DartType into the drafted type name.
 /// For collections it recurses into type arguments and preserves nullability.
+/// For non-collection types, if the type is draftable then we append "Draft",
+/// otherwise we leave it as is.
 String _toDraftedTypeName(DartType type) {
   String base;
   if (_isPrimitive(type)) {
-    base = type.getDisplayString(withNullability: false);
+    base = type.getDisplayString();
   } else if (_isList(type)) {
     final listArg = (type as ParameterizedType).typeArguments.first;
     base = 'List<${_toDraftedTypeName(listArg)}>';
   } else if (_isMap(type)) {
     final paramType = type as ParameterizedType;
-    final keyType =
-        paramType.typeArguments[0].getDisplayString(withNullability: false);
+    final keyType = paramType.typeArguments[0].getDisplayString();
     final valueType = paramType.typeArguments[1];
     base = 'Map<$keyType, ${_toDraftedTypeName(valueType)}>';
   } else if (_isSet(type)) {
@@ -53,14 +60,19 @@ String _toDraftedTypeName(DartType type) {
     final setTypeArg = setType.typeArguments.first;
     base = 'Set<${_toDraftedTypeName(setTypeArg)}>';
   } else {
-    base = _draftTypeName(type.getDisplayString(withNullability: false));
+    // For non-collection types, only produce a draft type if the type is draftable.
+    base = _isDraftable(type)
+        ? _draftTypeName(type.getDisplayString())
+        : type.getDisplayString();
   }
   return _isNullable(type) ? '$base?' : base;
 }
 
 /// Returns an expression that converts a value into its draft.
-/// For primitives, returns the value as is; for draftable objects, calls `.draft()`;
-/// for collections, it recursively maps the conversion using null-aware operators when needed.
+/// For primitives, returns the value as is.
+/// For collections, it recursively maps the conversion using null-aware operators.
+/// For non-collection objects, if the type is draftable, calls `.draft()`,
+/// otherwise returns the value unchanged.
 String _toDraftExpression(String expr, DartType type) {
   if (_isPrimitive(type)) {
     return expr;
@@ -70,7 +82,7 @@ String _toDraftExpression(String expr, DartType type) {
     final listArg = (type as ParameterizedType).typeArguments.first;
     final innerExpr = _toDraftExpression("e", listArg);
     return nullable
-        ? '$expr?.map((e) => $innerExpr)?.toList()'
+        ? '$expr?.map((e) => $innerExpr).toList()'
         : '$expr.map((e) => $innerExpr).toList()';
   } else if (_isMap(type)) {
     final paramType = type as ParameterizedType;
@@ -82,17 +94,21 @@ String _toDraftExpression(String expr, DartType type) {
     final setType = type as ParameterizedType;
     final setTypeArg = setType.typeArguments.first;
     return nullable
-        ? '$expr?.map((e) => ${_toDraftExpression("e", setTypeArg)})?.toSet()'
+        ? '$expr?.map((e) => ${_toDraftExpression("e", setTypeArg)}).toSet()'
         : '$expr.map((e) => ${_toDraftExpression("e", setTypeArg)}).toSet()';
   } else {
-    // For draftable objects.
-    return nullable ? '$expr?.draft()' : '$expr.draft()';
+    // For non-collection objects.
+    return _isDraftable(type)
+        ? (nullable ? '$expr?.draft()' : '$expr.draft()')
+        : expr;
   }
 }
 
 /// Returns an expression that “saves” a draft field back to its original.
-/// For primitives, returns as is; for draftable objects, calls `.save()`; for collections,
-/// it recursively maps the conversion using null-aware operators when needed.
+/// For primitives, returns as is.
+/// For collections, it recursively maps the conversion using null-aware operators.
+/// For non-collection objects, if the type is draftable, calls `.save()`,
+/// otherwise returns the value unchanged.
 String _toSaveExpression(String expr, DartType type) {
   if (_isPrimitive(type)) {
     return expr;
@@ -101,7 +117,7 @@ String _toSaveExpression(String expr, DartType type) {
   if (_isList(type)) {
     final listArg = (type as ParameterizedType).typeArguments.first;
     return nullable
-        ? '$expr?.map((e) => ${_toSaveExpression("e", listArg)})?.toList()'
+        ? '$expr?.map((e) => ${_toSaveExpression("e", listArg)}).toList()'
         : '$expr.map((e) => ${_toSaveExpression("e", listArg)}).toList()';
   } else if (_isMap(type)) {
     final paramType = type as ParameterizedType;
@@ -113,10 +129,12 @@ String _toSaveExpression(String expr, DartType type) {
     final setType = type as ParameterizedType;
     final setTypeArg = setType.typeArguments.first;
     return nullable
-        ? '$expr?.map((e) => ${_toSaveExpression("e", setTypeArg)})?.toSet()'
+        ? '$expr?.map((e) => ${_toSaveExpression("e", setTypeArg)}).toSet()'
         : '$expr.map((e) => ${_toSaveExpression("e", setTypeArg)}).toSet()';
   } else {
-    return nullable ? '$expr?.save()' : '$expr.save()';
+    return _isDraftable(type)
+        ? (nullable ? '$expr?.save()' : '$expr.save()')
+        : expr;
   }
 }
 
@@ -127,8 +145,7 @@ bool _isDraftable(DartType type) {
     return element.metadata.any((meta) {
       final value = meta.computeConstantValue();
       if (value == null) return false;
-      final typeStr =
-          value.type?.getDisplayString(withNullability: false) ?? '';
+      final typeStr = value.type?.getDisplayString() ?? '';
       return typeStr == 'Draft'; // match your annotation type name
     });
   }
@@ -158,11 +175,11 @@ abstract class FieldProcessor {
 
 /// Processor for primitive fields.
 class PrimitiveFieldProcessor extends FieldProcessor {
-  PrimitiveFieldProcessor(FieldElement field) : super(field);
+  PrimitiveFieldProcessor(super.field);
 
   @override
   String generateFieldDeclaration() {
-    return '${field.type.getDisplayString(withNullability: true)} ${field.name};';
+    return '${field.type.getDisplayString()} ${field.name};';
   }
 
   @override
@@ -182,11 +199,10 @@ class PrimitiveFieldProcessor extends FieldProcessor {
 
 /// Processor for fields that are draftable objects.
 class DraftableFieldProcessor extends FieldProcessor {
-  DraftableFieldProcessor(FieldElement field) : super(field);
+  DraftableFieldProcessor(super.field);
 
   String get privateName => '_${field.name}';
-  String get originalType =>
-      field.type.getDisplayString(withNullability: false);
+  String get originalType => field.type.getDisplayString();
   String get draftType => _draftTypeName(originalType);
 
   @override
@@ -223,11 +239,11 @@ class DraftableFieldProcessor extends FieldProcessor {
 /// Processor for non-draftable (but non-primitive) fields.
 /// These are treated like simple values, with no conversion.
 class SimpleFieldProcessor extends FieldProcessor {
-  SimpleFieldProcessor(FieldElement field) : super(field);
+  SimpleFieldProcessor(super.field);
 
   @override
   String generateFieldDeclaration() {
-    return '${field.type.getDisplayString(withNullability: true)} ${field.name};';
+    return '${field.type.getDisplayString()} ${field.name};';
   }
 
   @override
@@ -247,7 +263,7 @@ class SimpleFieldProcessor extends FieldProcessor {
 
 /// Processor for collection fields (List, Map, or Set) where inner types may be draftable.
 class CollectionFieldProcessor extends FieldProcessor {
-  CollectionFieldProcessor(FieldElement field) : super(field);
+  CollectionFieldProcessor(super.field);
 
   String get privateName => '_${field.name}';
 
@@ -262,7 +278,7 @@ class CollectionFieldProcessor extends FieldProcessor {
 
   @override
   String generateGetterSetter() {
-    final originalType = field.type.getDisplayString(withNullability: true);
+    final originalType = field.type.getDisplayString();
     return '''
   ${_draftedCollectionType()} get ${field.name} => $privateName;
   set ${field.name}($originalType value) => $privateName = ${_toDraftExpression("value", field.type)};
@@ -271,7 +287,7 @@ class CollectionFieldProcessor extends FieldProcessor {
 
   @override
   String generateConstructorParameter() {
-    return 'required ${field.type.getDisplayString(withNullability: true)} ${field.name}';
+    return 'required ${field.type.getDisplayString()} ${field.name}';
   }
 
   @override
@@ -307,7 +323,7 @@ String _generateParameterSignature(List<ParameterElement> parameters) {
   final named = <String>[];
 
   for (final p in parameters) {
-    final typeStr = p.type.getDisplayString(withNullability: true);
+    final typeStr = p.type.getDisplayString();
     final defaultValue =
         p.defaultValueCode != null ? ' = ${p.defaultValueCode}' : '';
     if (p.isNamed) {
@@ -426,8 +442,7 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     final handledNames = fields.map((f) => f.name).toSet();
     for (final accessor in classElement.accessors.where((a) =>
         a.isGetter && !a.isSynthetic && !handledNames.contains(a.name))) {
-      final returnType =
-          accessor.returnType.getDisplayString(withNullability: true);
+      final returnType = accessor.returnType.getDisplayString();
       buffer.writeln('  @override');
       buffer.writeln(
           '  $returnType get ${accessor.displayName} => save().${accessor.displayName};');
@@ -437,15 +452,14 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     // Forward all non-static, public instance methods (except the save() method).
     for (final method in classElement.methods.where((m) =>
         !m.isStatic && m.isPublic && !m.isOperator && m.name != 'save')) {
-      final returnType =
-          method.returnType.getDisplayString(withNullability: true);
+      final returnType = method.returnType.getDisplayString();
       final paramsSignature = _generateParameterSignature(method.parameters);
       final argsList = _generateArgumentList(method.parameters);
       final typeParams = method.typeParameters.isNotEmpty
           ? '<${method.typeParameters.map((tp) => tp.name).join(', ')}>'
           : '';
       buffer.writeln('  @override');
-      if (method.returnType.isVoid) {
+      if (method.returnType is VoidType) {
         buffer.writeln(
             '  void ${method.name}$typeParams($paramsSignature) => save().${method.name}($argsList);');
       } else {
