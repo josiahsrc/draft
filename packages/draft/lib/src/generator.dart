@@ -31,7 +31,6 @@ String _draftTypeName(String originalName) {
   if (originalName.endsWith('?')) {
     return '${originalName.substring(0, originalName.length - 1)}Draft?';
   }
-
   return '${originalName}Draft';
 }
 
@@ -449,7 +448,33 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     }
     buffer.writeln();
 
-    // Forward all non-static, public instance methods (except the save() method).
+    // Forward mixin methods that are inherited but not overridden.
+    final mixinMethods = <MethodElement>{};
+    for (final mixin in classElement.mixins) {
+      mixinMethods.addAll(mixin.element.methods.where((m) => !m.isStatic));
+    }
+    mixinMethods.removeWhere(
+        (m) => classElement.methods.any((cm) => cm.name == m.name));
+    for (final method in mixinMethods) {
+      final returnType = method.returnType.getDisplayString();
+      final paramsSignature = _generateParameterSignature(method.parameters);
+      final argsList = _generateArgumentList(method.parameters);
+      final typeParams = method.typeParameters.isNotEmpty
+          ? '<${method.typeParameters.map((tp) => tp.name).join(', ')}>'
+          : '';
+      buffer.writeln('  @override');
+      if (method.returnType is VoidType) {
+        buffer.writeln(
+            '  void ${method.name}$typeParams($paramsSignature) => save().${method.name}($argsList);');
+      } else {
+        buffer.writeln(
+            '  $returnType ${method.name}$typeParams($paramsSignature) => save().${method.name}($argsList);');
+      }
+    }
+    buffer.writeln();
+
+    // Forward all non-static, public instance methods (except the save() method)
+    // that are declared on the class.
     for (final method in classElement.methods.where((m) =>
         !m.isStatic && m.isPublic && !m.isOperator && m.name != 'save')) {
       final returnType = method.returnType.getDisplayString();
