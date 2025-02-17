@@ -1,39 +1,75 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# Draft
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages). 
+Immer, but for dart. Convert between immutable and mutable objects.
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages). 
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
-
-## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+:warning: This package is in its early stages and the API will change.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+Draft is inspired by immer.
 
 ```dart
-const like = 'sample';
+import 'package:draft_annotation/draft_annotation.dart';
+
+part 'example.draft.dart';
+
+@draft
+class Foo {
+  final int value;
+
+  const Foo({
+    required this.value,
+  });
+}
+
+void main() {
+  final foo1 = Foo(value: 1);
+
+  // Use the produce method
+  final foo2 = foo1.produce((draft) {
+    draft.value += 1;
+  });
+  assert(foo2.value == 2);
+
+  // Or create drafts inline
+  final fooDraft = foo.draft();
+  fooDraft.value = 10;
+  final foo3 = fooDraft.save();
+  assert(foo3.value == 10);
+}
 ```
 
-## Additional information
+See the [examples](https://github.com/josiahsrc/draft) directory for more info.
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+## Set up
+
+First install draft and build runner, if you haven't already.
+
+```sh
+dart pub add dev:build_runner dev:draft draft_annotation
+```
+
+Next define your drafts.
+
+```dart
+// example.dart
+
+import 'package:draft_annotation/draft_annotation.dart';
+
+part 'example.draft.dart';
+
+@draft
+class Foo {
+  final int value;
+
+  const Foo({
+    required this.value,
+  });
+}
+```
+
+Then run the build runner.
+
+```sh
+dart run build_runner build --delete-conflicting-outputs
+```

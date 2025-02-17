@@ -1,7 +1,7 @@
 name: draft
-description: A starting point for Dart libraries or applications.
-version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+description: Immer, but for dart. Convert between immutable and mutable objects.
+version: 0.0.2
+repository: https://github.com/josiahsrc/draft
 
 environment:
   sdk: ^3.6.1
@@ -10,8 +10,7 @@ dependencies:
   analyzer: ">=7.0.0 <8.0.0"
   build: ^2.3.1
   source_gen: ^2.0.0
-  draft_annotation:
-    path: ../draft_annotation
+  draft_annotation: ^0.0.1
 
 dev_dependencies:
   lints: ^5.0.0
