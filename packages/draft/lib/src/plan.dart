@@ -63,6 +63,13 @@ class DataDraft implements Data {
 
 extension InnerDraftExtension on Inner {
   InnerDraft draft() => InnerDraft(value: this.value);
+
+  // Add this:
+  Inner produce(void Function(InnerDraft draft) producer) {
+    final draft = this.draft();
+    producer(draft);
+    return draft.save();
+  }
 }
 
 extension DataDraftExtension on Data {
