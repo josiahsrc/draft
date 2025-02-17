@@ -5,7 +5,9 @@ import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
 import 'package:source_gen/source_gen.dart';
-import 'package:draft_annotation/draft_annotation.dart';
+
+// ignore: implementation_imports
+import 'package:draft_annotation/src/draft.dart';
 
 extension on DartType {
   String getCodeName([String suffix = '']) => '${getDisplayString()}$suffix';
