@@ -6,6 +6,11 @@ mixin SomeMixin {
   String someMixinMethod() {
     return 'someMixinMethod';
   }
+
+  @override
+  bool operator ==(Object other) {
+    return false;
+  }
 }
 
 @draft

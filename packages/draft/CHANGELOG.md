@@ -1,3 +1,7 @@
+## 0.0.8
+
+- Mix mixins into the draft instead of trying to implement them
+
 ## 0.0.7
 
 - Linting

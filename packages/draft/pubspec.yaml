@@ -1,6 +1,6 @@
 name: draft
 description: Immer, but for dart. Convert between immutable and mutable objects.
-version: 0.0.7
+version: 0.0.8
 repository: https://github.com/josiahsrc/draft
 
 environment:
@@ -17,4 +17,3 @@ dev_dependencies:
   test: ^1.24.0
   build_test: ^2.2.3
   build_runner: ^2.3.3
-  collection: ^1.19.1

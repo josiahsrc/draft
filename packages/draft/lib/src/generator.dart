@@ -379,6 +379,13 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     final constructorName =
         annotation.peek('constructor')?.stringValue; // may be null
 
+    // Build mixin clause if any mixins are applied.
+    String mixinClause = '';
+    if (classElement.mixins.isNotEmpty) {
+      mixinClause =
+          ' with ${classElement.mixins.map((m) => m.getDisplayString()).join(', ')}';
+    }
+
     // Only include actual declared fields (with synthetic getters).
     final fields = classElement.fields
         .where((f) => !f.isStatic && f.getter?.isSynthetic == true)
@@ -414,8 +421,8 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
 
     final buffer = StringBuffer();
 
-    // Begin class declaration.
-    buffer.writeln('class $draftClassName implements $className {');
+    // Begin class declaration including the mixins.
+    buffer.writeln('class $draftClassName$mixinClause implements $className {');
     buffer.writeln('  // Mutable fields');
     buffer.writeln('  $fieldDeclarations\n');
     buffer.writeln('  // Getters and setters for nested draftable fields');
@@ -448,33 +455,7 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     }
     buffer.writeln();
 
-    // Forward mixin methods that are inherited but not overridden.
-    final mixinMethods = <MethodElement>{};
-    for (final mixin in classElement.mixins) {
-      mixinMethods.addAll(mixin.element.methods.where((m) => !m.isStatic));
-    }
-    mixinMethods.removeWhere(
-        (m) => classElement.methods.any((cm) => cm.name == m.name));
-    for (final method in mixinMethods) {
-      final returnType = method.returnType.getDisplayString();
-      final paramsSignature = _generateParameterSignature(method.parameters);
-      final argsList = _generateArgumentList(method.parameters);
-      final typeParams = method.typeParameters.isNotEmpty
-          ? '<${method.typeParameters.map((tp) => tp.name).join(', ')}>'
-          : '';
-      buffer.writeln('  @override');
-      if (method.returnType is VoidType) {
-        buffer.writeln(
-            '  void ${method.name}$typeParams($paramsSignature) => save().${method.name}($argsList);');
-      } else {
-        buffer.writeln(
-            '  $returnType ${method.name}$typeParams($paramsSignature) => save().${method.name}($argsList);');
-      }
-    }
-    buffer.writeln();
-
-    // Forward all non-static, public instance methods (except the save() method)
-    // that are declared on the class.
+    // Forward all non-static, public instance methods (except the save() method).
     for (final method in classElement.methods.where((m) =>
         !m.isStatic && m.isPublic && !m.isOperator && m.name != 'save')) {
       final returnType = method.returnType.getDisplayString();
