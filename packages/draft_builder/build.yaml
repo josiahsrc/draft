@@ -17,7 +17,7 @@ targets:
 
 builders:
   draft:
-    import: "package:draft/builder.dart"
+    import: "package:draft_builder/draft_builder.dart"
     builder_factories: ["draftBuilder"]
     build_extensions: { ".dart": [".draft.dart"] }
     auto_apply: dependents
