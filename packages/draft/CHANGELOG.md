@@ -1,3 +1,7 @@
+## 0.0.9
+
+- Move generator into draft_builder package
+
 ## 0.0.8
 
 - Mix mixins into the draft instead of trying to implement them

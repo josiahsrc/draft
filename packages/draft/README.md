@@ -9,7 +9,7 @@ Immer, but for dart. Convert between immutable and mutable objects.
 Draft is inspired by immer.
 
 ```dart
-import 'package:draft_annotation/draft_annotation.dart';
+import 'package:draft/draft.dart';
 
 part 'example.draft.dart';
 
@@ -46,7 +46,7 @@ See the [examples](https://github.com/josiahsrc/draft) directory for more info.
 First install draft and build runner, if you haven't already.
 
 ```sh
-dart pub add dev:build_runner dev:draft draft_annotation
+dart pub add dev:build_runner dev:draft_builder draft
 ```
 
 Next define your drafts.
@@ -54,7 +54,7 @@ Next define your drafts.
 ```dart
 // example.dart
 
-import 'package:draft_annotation/draft_annotation.dart';
+import 'package:draft/draft.dart';
 
 part 'example.draft.dart';
 

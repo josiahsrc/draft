@@ -1,4 +1,4 @@
-import 'package:draft_annotation/draft_annotation.dart';
+import 'package:draft/draft.dart';
 
 part 'nested_skip.draft.dart';
 

@@ -4,7 +4,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:build/build.dart';
-import 'package:draft_annotation/draft_annotation.dart';
+import 'package:draft/draft.dart';
 import 'package:source_gen/source_gen.dart';
 
 /// Helper to decide if a type is “primitive.”
