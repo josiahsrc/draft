@@ -17,7 +17,5 @@ mixin SomeMixin {
 class Interface with SomeMixin {
   final int value;
 
-  Interface({
-    required this.value,
-  });
+  Interface({required this.value});
 }

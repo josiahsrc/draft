@@ -5,7 +5,8 @@ import 'integration/basic.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'basic.dart';
 
 void main() {
@@ -15,7 +16,9 @@ void main() {
     draft.value = 2;
   });
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('works correctly', () async {

@@ -6,7 +6,5 @@ part 'basic.draft.dart';
 class BasicInt {
   final int value;
 
-  BasicInt({
-    required this.value,
-  });
+  BasicInt({required this.value});
 }

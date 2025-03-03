@@ -5,7 +5,8 @@ import 'integration/nested.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'nested.dart';
 
 void main() {
@@ -31,11 +32,14 @@ void main() {
     ..draftable = NestedDraftableDraft(value: 3)
     ..nonDraftable = NestedNonDraftable(value: 2);
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('fail if modify non-draftable', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'nested.dart';
 
 void main() {
@@ -46,7 +50,9 @@ void main() {
     nullableNonDraftable: null,
   ).draft().nonDraftable.value = 2;
 }
-'''), throwsCompileError);
+'''),
+      throwsCompileError,
+    );
   });
 
   test('works correctly', () async {

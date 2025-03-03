@@ -6,9 +6,7 @@ part 'interface.draft.dart';
 class Interface {
   final int value;
 
-  Interface({
-    required this.value,
-  });
+  Interface({required this.value});
 
   void someMethod() {
     print('someMethod');

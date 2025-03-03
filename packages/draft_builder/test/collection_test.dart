@@ -5,7 +5,8 @@ import 'integration/collection.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'collection.dart';
 
 void main() {
@@ -24,7 +25,9 @@ void main() {
     draft.map[4] = 4;
   });
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('works correctly', () async {

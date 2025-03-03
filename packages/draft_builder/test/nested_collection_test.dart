@@ -5,7 +5,8 @@ import 'integration/nested_collection.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'nested_collection.dart';
 
 void main() {
@@ -25,11 +26,14 @@ void main() {
     ..draftable[0] = NestedDraftableDraft(value: 3)
     ..nonDraftable[0] = NestedNonDraftable(value: 2);
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('fail if modify non-draftable element', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'nested_collection.dart';
 
 void main() {
@@ -38,7 +42,9 @@ void main() {
     nonDraftable: [NestedNonDraftable(value: 1)],
   ).draft().nonDraftable[0].value = 2;
 }
-'''), throwsCompileError);
+'''),
+      throwsCompileError,
+    );
   });
 
   test('works correctly', () async {

@@ -5,7 +5,8 @@ import 'integration/nested_skip.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'nested_skip.dart';
 
 void main() {
@@ -17,11 +18,14 @@ void main() {
   ).draft()
     ..b = B(c: C(value: 2));
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('fail if modify nested draftable inside skipped type', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'nested_skip.dart';
 
 void main() {
@@ -30,13 +34,13 @@ void main() {
     b: B(c: C(value: 1)),
   ).draft().b.c.value = 2;
 }
-'''), throwsCompileError);
+'''),
+      throwsCompileError,
+    );
   });
 
   test('works correctly', () {
-    final a = A(
-      b: B(c: C(value: 1)),
-    );
+    final a = A(b: B(c: C(value: 1)));
 
     // Create a draft from A.
     final draft = a.draft();

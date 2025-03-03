@@ -5,7 +5,8 @@ import 'integration/interface_mixin.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'interface_mixin.dart';
 
 void main() {
@@ -18,7 +19,9 @@ void main() {
   draft.value = 2;
   draft.someMixinMethod();
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('works correctly', () {

@@ -6,7 +6,5 @@ part 'recursive.draft.dart';
 class Recursive {
   final Recursive? item;
 
-  Recursive({
-    required this.item,
-  });
+  Recursive({required this.item});
 }

@@ -5,7 +5,8 @@ import 'integration/interface.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'interface.dart';
 
 void main() {
@@ -24,7 +25,9 @@ void main() {
   int a2 = Interface(value: 1).doubleValue();
   int b2 = Interface(value: 1).tripleValue;
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('works correctly', () async {

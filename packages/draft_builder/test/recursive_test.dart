@@ -5,7 +5,8 @@ import 'integration/recursive.dart';
 
 void main() {
   test('compiles', () async {
-    await expectLater(compile(r'''
+    await expectLater(
+      compile(r'''
 import 'recursive.dart';
 
 void main() {
@@ -21,7 +22,9 @@ void main() {
   Recursive(item: Recursive(item: null)).draft()
     ..item?.item = Recursive(item: null);
 }
-'''), completes);
+'''),
+      completes,
+    );
   });
 
   test('works correctly', () {

@@ -8,9 +8,5 @@ class CollectionObject {
   final Set<int> set;
   final Map<int, int> map;
 
-  CollectionObject({
-    required this.list,
-    required this.set,
-    required this.map,
-  });
+  CollectionObject({required this.list, required this.set, required this.map});
 }

@@ -6,17 +6,13 @@ part 'nested.draft.dart';
 class NestedDraftable {
   final int value;
 
-  NestedDraftable({
-    required this.value,
-  });
+  NestedDraftable({required this.value});
 }
 
 class NestedNonDraftable {
   final int value;
 
-  NestedNonDraftable({
-    required this.value,
-  });
+  NestedNonDraftable({required this.value});
 }
 
 @draft
