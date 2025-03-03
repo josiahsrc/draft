@@ -59,10 +59,10 @@ String _toDraftedTypeName(DartType type) {
     final setTypeArg = setType.typeArguments.first;
     base = 'Set<${_toDraftedTypeName(setTypeArg)}>';
   } else {
-    // For non-collection types, only produce a draft type if the type is draftable.
-    base = _isDraftable(type)
-        ? _draftTypeName(type.getDisplayString())
-        : type.getDisplayString();
+    base =
+        _isDraftable(type)
+            ? _draftTypeName(type.getDisplayString())
+            : type.getDisplayString();
   }
   return _isNullable(type) ? '$base?' : base;
 }
@@ -96,7 +96,6 @@ String _toDraftExpression(String expr, DartType type) {
         ? '$expr?.map((e) => ${_toDraftExpression("e", setTypeArg)}).toSet()'
         : '$expr.map((e) => ${_toDraftExpression("e", setTypeArg)}).toSet()';
   } else {
-    // For non-collection objects.
     return _isDraftable(type)
         ? (nullable ? '$expr?.draft()' : '$expr.draft()')
         : expr;
@@ -206,7 +205,6 @@ class DraftableFieldProcessor extends FieldProcessor {
 
   @override
   String generateFieldDeclaration() {
-    // Store the draft version in a private field.
     return '$draftType $privateName;';
   }
 
@@ -220,7 +218,6 @@ class DraftableFieldProcessor extends FieldProcessor {
 
   @override
   String generateConstructorParameter() {
-    // The constructor accepts the original type.
     return 'required $originalType ${field.name}';
   }
 
@@ -236,7 +233,6 @@ class DraftableFieldProcessor extends FieldProcessor {
 }
 
 /// Processor for non-draftable (but non-primitive) fields.
-/// These are treated like simple values, with no conversion.
 class SimpleFieldProcessor extends FieldProcessor {
   SimpleFieldProcessor(super.field);
 
@@ -308,8 +304,6 @@ FieldProcessor _processorFor(FieldElement field) {
   } else if (_isList(type) || _isMap(type) || _isSet(type)) {
     return CollectionFieldProcessor(field);
   } else {
-    // If the type is draftable, use DraftableFieldProcessor;
-    // otherwise, use SimpleFieldProcessor.
     return _isDraftable(type)
         ? DraftableFieldProcessor(field)
         : SimpleFieldProcessor(field);
@@ -376,10 +370,22 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     final classElement = element;
     final className = classElement.name;
     final draftClassName = _draftTypeName(className);
+
+    // Extract generic type parameters.
+    final typeParams = classElement.typeParameters;
+    final typeParamsDeclaration =
+        typeParams.isNotEmpty
+            ? '<${typeParams.map((p) => p.getDisplayString()).join(', ')}>'
+            : '';
+    final typeParamsUsage =
+        typeParams.isNotEmpty
+            ? '<${typeParams.map((p) => p.name).join(', ')}>'
+            : '';
+
     final constructorName =
         annotation.peek('constructor')?.stringValue; // may be null
 
-    // Build mixin clause if any mixins are applied.
+    // Build mixin clause.
     String mixinClause = '';
     if (classElement.mixins.isNotEmpty) {
       mixinClause =
@@ -387,31 +393,35 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     }
 
     // Only include actual declared fields (with synthetic getters).
-    final fields = classElement.fields
-        .where((f) => !f.isStatic && f.getter?.isSynthetic == true)
-        .toList();
-
+    final fields =
+        classElement.fields
+            .where((f) => !f.isStatic && f.getter?.isSynthetic == true)
+            .toList();
     final processors = fields.map(_processorFor).toList();
 
     // Field declarations.
-    final fieldDeclarations =
-        processors.map((p) => p.generateFieldDeclaration()).join('\n  ');
+    final fieldDeclarations = processors
+        .map((p) => p.generateFieldDeclaration())
+        .join('\n  ');
 
     // Getters and setters.
-    final getterSetters =
-        processors.map((p) => p.generateGetterSetter()).join('\n');
+    final getterSetters = processors
+        .map((p) => p.generateGetterSetter())
+        .join('\n');
 
     // Constructor parameters and initializers.
-    final constructorParams =
-        processors.map((p) => p.generateConstructorParameter()).join(', ');
+    final constructorParams = processors
+        .map((p) => p.generateConstructorParameter())
+        .join(', ');
     final initializerList = processors
         .map((p) => p.generateConstructorInitializer())
         .where((init) => init.trim().isNotEmpty)
         .join(',\n    ');
 
     // Save method assignments.
-    final saveAssignments =
-        processors.map((p) => p.generateSaveAssignment()).join(',\n      ');
+    final saveAssignments = processors
+        .map((p) => p.generateSaveAssignment())
+        .join(',\n      ');
 
     // Determine constructor call for save().
     final constructorCall =
@@ -421,15 +431,17 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
 
     final buffer = StringBuffer();
 
-    // Begin class declaration including the mixins.
-    buffer.writeln('class $draftClassName$mixinClause implements $className {');
+    // Begin class declaration with generics and mixins.
+    buffer.writeln(
+      'class $draftClassName$typeParamsDeclaration $mixinClause implements $className$typeParamsUsage {',
+    );
     buffer.writeln('  // Mutable fields');
     buffer.writeln('  $fieldDeclarations\n');
     buffer.writeln('  // Getters and setters for nested draftable fields');
     buffer.writeln(getterSetters);
     buffer.writeln();
 
-    // Generate the constructor.
+    // Generate the constructor WITHOUT generic type parameters in its name.
     buffer.write('  $draftClassName({$constructorParams})');
     if (initializerList.trim().isNotEmpty) {
       buffer.writeln(' :\n    $initializerList;');
@@ -439,50 +451,60 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     buffer.writeln();
 
     // Generate the save() method.
-    buffer.writeln('  $className save() => $constructorCall(');
+    buffer.writeln('  $className$typeParamsUsage save() => $constructorCall(');
     buffer.writeln('      $saveAssignments');
     buffer.writeln('  );');
     buffer.writeln();
 
-    // Forward computed getters (if any) that are not already handled by fields.
+    // Forward computed getters.
     final handledNames = fields.map((f) => f.name).toSet();
-    for (final accessor in classElement.accessors.where((a) =>
-        a.isGetter && !a.isSynthetic && !handledNames.contains(a.name))) {
+    for (final accessor in classElement.accessors.where(
+      (a) => a.isGetter && !a.isSynthetic && !handledNames.contains(a.name),
+    )) {
       final returnType = accessor.returnType.getDisplayString();
       buffer.writeln('  @override');
       buffer.writeln(
-          '  $returnType get ${accessor.displayName} => save().${accessor.displayName};');
+        '  $returnType get ${accessor.displayName} => save().${accessor.displayName};',
+      );
     }
     buffer.writeln();
 
-    // Forward all non-static, public instance methods (except the save() method).
-    for (final method in classElement.methods.where((m) =>
-        !m.isStatic && m.isPublic && !m.isOperator && m.name != 'save')) {
+    // Forward non-static, public instance methods.
+    for (final method in classElement.methods.where(
+      (m) => !m.isStatic && m.isPublic && !m.isOperator && m.name != 'save',
+    )) {
       final returnType = method.returnType.getDisplayString();
       final paramsSignature = _generateParameterSignature(method.parameters);
       final argsList = _generateArgumentList(method.parameters);
-      final typeParams = method.typeParameters.isNotEmpty
-          ? '<${method.typeParameters.map((tp) => tp.name).join(', ')}>'
-          : '';
+      final typeParamsForMethod =
+          method.typeParameters.isNotEmpty
+              ? '<${method.typeParameters.map((tp) => tp.name).join(', ')}>'
+              : '';
       buffer.writeln('  @override');
       if (method.returnType is VoidType) {
         buffer.writeln(
-            '  void ${method.name}$typeParams($paramsSignature) => save().${method.name}($argsList);');
+          '  void ${method.name}$typeParamsForMethod($paramsSignature) => save().${method.name}($argsList);',
+        );
       } else {
         buffer.writeln(
-            '  $returnType ${method.name}$typeParams($paramsSignature) => save().${method.name}($argsList);');
+          '  $returnType ${method.name}$typeParamsForMethod($paramsSignature) => save().${method.name}($argsList);',
+        );
       }
     }
 
     buffer.writeln('}');
     buffer.writeln();
 
-    // Generate an extension for the .draft() helper and now the produce() helper.
-    buffer.writeln('extension ${className}DraftExtension on $className {');
+    // Generate extension for draft() and produce() helpers.
     buffer.writeln(
-        '  $draftClassName draft() => $draftClassName(${fields.map((f) => '${f.name}: this.${f.name}').join(', ')});');
+      'extension ${className}DraftExtension$typeParamsDeclaration on $className$typeParamsUsage {',
+    );
     buffer.writeln(
-        '  $className produce(void Function($draftClassName draft) producer) {');
+      '  $draftClassName$typeParamsUsage draft() => $draftClassName(${fields.map((f) => '${f.name}: this.${f.name}').join(', ')});',
+    );
+    buffer.writeln(
+      '  $className$typeParamsUsage produce(void Function($draftClassName$typeParamsUsage draft) producer) {',
+    );
     buffer.writeln('    final draft = this.draft();');
     buffer.writeln('    producer(draft);');
     buffer.writeln('    return draft.save();');

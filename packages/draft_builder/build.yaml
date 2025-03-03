@@ -1,7 +1,7 @@
 targets:
   $default:
     builders:
-      draft:
+      draft_builder:
         enabled: true
         generate_for:
           exclude:
@@ -16,7 +16,7 @@ targets:
             - "type=lint"
 
 builders:
-  draft:
+  draft_builder:
     import: "package:draft_builder/draft_builder.dart"
     builder_factories: ["draftBuilder"]
     build_extensions: { ".dart": [".draft.dart"] }

@@ -9,7 +9,7 @@ final throwsAssertionError = throwsA(isA<AssertionError>());
 
 Future<void> compile(String src) async {
   final main = await resolveSources({
-    'draft|test/integration/main.dart': '''
+    'draft_builder|test/integration/main.dart': '''
 library main;
 
 $src
@@ -17,7 +17,7 @@ $src
   }, (r) => r.findLibraryByName('main'));
 
   final errorResult = await main!.session
-      .getErrors('/draft/test/integration/main.dart') as ErrorsResult;
+      .getErrors('/draft_builder/test/integration/main.dart') as ErrorsResult;
   final criticalErrors = errorResult.errors
       .where((element) => element.severity == Severity.error)
       .toList();
