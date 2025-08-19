@@ -1,6 +1,5 @@
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/diagnostic/diagnostic.dart';
-import 'package:analyzer/error/error.dart';
 import 'package:build_test/build_test.dart';
 import 'package:test/test.dart';
 
@@ -8,19 +7,23 @@ final throwsCompileError = throwsA(isA<CompileError>());
 final throwsAssertionError = throwsA(isA<AssertionError>());
 
 Future<void> compile(String src) async {
-  final main = await resolveSources({
-    'draft_builder|test/integration/main.dart': '''
+  final main = await resolveSources(
+    {
+      'draft_builder|test/integration/main.dart': '''
 library main;
 
 $src
     ''',
-  }, (r) => r.findLibraryByName('main'));
+    },
+    (r) => r.findLibraryByName('main'),
+    readAllSourcesFromFilesystem: true,
+  );
 
   final errorResult =
       await main!.session.getErrors('/draft_builder/test/integration/main.dart')
           as ErrorsResult;
   final criticalErrors =
-      errorResult.errors
+      errorResult.diagnostics
           .where((element) => element.severity == Severity.error)
           .toList();
 
@@ -31,7 +34,7 @@ $src
 
 class CompileError extends Error {
   CompileError(this.errors);
-  final List<AnalysisError> errors;
+  final List<Diagnostic> errors;
 
   @override
   String toString() {

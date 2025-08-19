@@ -27,7 +27,8 @@ bool _isSet(DartType type) => type.isDartCoreSet;
 
 /// Returns the draft type name for a given type.
 /// For example, if the original is `Inner` then the draft type is `InnerDraft`.
-String _draftTypeName(String originalName) {
+String _draftTypeName(String? originalName) {
+  if (originalName == null) return 'dynamic';
   if (originalName.endsWith('?')) {
     return '${originalName.substring(0, originalName.length - 1)}Draft?';
   }
@@ -72,7 +73,10 @@ String _toDraftedTypeName(DartType type) {
 /// For collections, it recursively maps the conversion using null-aware operators.
 /// For non-collection objects, if the type is draftable, calls `.draft()`,
 /// otherwise returns the value unchanged.
-String _toDraftExpression(String expr, DartType type) {
+String _toDraftExpression(String? expr, DartType type) {
+  if (expr == null) {
+    return 'null';
+  }
   if (_isPrimitive(type)) {
     return expr;
   }
@@ -107,7 +111,10 @@ String _toDraftExpression(String expr, DartType type) {
 /// For collections, it recursively maps the conversion using null-aware operators.
 /// For non-collection objects, if the type is draftable, calls `.save()`,
 /// otherwise returns the value unchanged.
-String _toSaveExpression(String expr, DartType type) {
+String _toSaveExpression(String? expr, DartType type) {
+  if (expr == null) {
+    return 'null';
+  }
   if (_isPrimitive(type)) {
     return expr;
   }
@@ -138,14 +145,12 @@ String _toSaveExpression(String expr, DartType type) {
 
 /// Determines whether a type is draftable by checking if its element has the @draft annotation.
 bool _isDraftable(DartType type) {
-  final element = type.element;
-  if (element is ClassElement) {
-    return element.metadata.any((meta) {
-      final value = meta.computeConstantValue();
-      if (value == null) return false;
-      final typeStr = value.type?.getDisplayString() ?? '';
-      return typeStr == 'Draft'; // match your annotation type name
-    });
+  final el = type.element;
+  if (el is ClassElement) {
+    return const TypeChecker.typeNamed(
+      Draft,
+      inPackage: 'draft',
+    ).hasAnnotationOfExact(el);
   }
   return false;
 }
@@ -311,7 +316,7 @@ FieldProcessor _processorFor(FieldElement field) {
 }
 
 /// Helper to generate a method’s parameter declaration string.
-String _generateParameterSignature(List<ParameterElement> parameters) {
+String _generateParameterSignature(List<FormalParameterElement> parameters) {
   final positional = <String>[];
   final named = <String>[];
 
@@ -339,7 +344,7 @@ String _generateParameterSignature(List<ParameterElement> parameters) {
 }
 
 /// Helper to generate an argument list for forwarding a method call.
-String _generateArgumentList(List<ParameterElement> parameters) {
+String _generateArgumentList(List<FormalParameterElement> parameters) {
   final positional = <String>[];
   final named = <String>[];
 
@@ -347,7 +352,7 @@ String _generateArgumentList(List<ParameterElement> parameters) {
     if (p.isNamed) {
       named.add('${p.name}: ${p.name}');
     } else {
-      positional.add(p.name);
+      positional.add(p.name ?? 'dynamic');
     }
   }
 
@@ -375,7 +380,7 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     final typeParams = classElement.typeParameters;
     final typeParamsDeclaration =
         typeParams.isNotEmpty
-            ? '<${typeParams.map((p) => p.getDisplayString()).join(', ')}>'
+            ? '<${typeParams.map((p) => p.displayString()).join(', ')}>'
             : '';
     final typeParamsUsage =
         typeParams.isNotEmpty
@@ -458,8 +463,8 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
 
     // Forward computed getters.
     final handledNames = fields.map((f) => f.name).toSet();
-    for (final accessor in classElement.accessors.where(
-      (a) => a.isGetter && !a.isSynthetic && !handledNames.contains(a.name),
+    for (final accessor in classElement.getters.where(
+      (a) => !a.isSynthetic && !handledNames.contains(a.name),
     )) {
       final returnType = accessor.returnType.getDisplayString();
       buffer.writeln('  @override');
@@ -474,8 +479,10 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
       (m) => !m.isStatic && m.isPublic && !m.isOperator && m.name != 'save',
     )) {
       final returnType = method.returnType.getDisplayString();
-      final paramsSignature = _generateParameterSignature(method.parameters);
-      final argsList = _generateArgumentList(method.parameters);
+      final paramsSignature = _generateParameterSignature(
+        method.formalParameters,
+      );
+      final argsList = _generateArgumentList(method.formalParameters);
       final typeParamsForMethod =
           method.typeParameters.isNotEmpty
               ? '<${method.typeParameters.map((tp) => tp.name).join(', ')}>'
