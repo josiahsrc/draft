@@ -23,7 +23,7 @@ class CoolInnerDraft implements CoolInner {
   CoolInnerDraft({required this.field, required InnerInnerInner inner})
       : _inner = inner.draft();
 
-  CoolInner save() => CoolInner(field: field, inner: inner.save());
+  CoolInner save() => CoolInner(field: field, inner: inner);
 }
 
 extension CoolInnerDraftExtension on CoolInner {
@@ -93,10 +93,10 @@ class DataFieldsDraft implements DataFields {
       {required Map<String, String> map,
       required List<String> list,
       required Set<String> set,
+      required this.nullableString,
       required Set<String>? nullableSet,
       required Map<String, String>? nullableMap,
-      required List<String>? nullableList,
-      required this.nullableString})
+      required List<String>? nullableList})
       : _map = map.map((k, v) => MapEntry(k, v)),
         _list = list.map((e) => e).toList(),
         _set = set.map((e) => e).toSet(),
@@ -105,13 +105,13 @@ class DataFieldsDraft implements DataFields {
         _nullableList = nullableList?.map((e) => e).toList();
 
   DataFields save() => DataFields(
-      map: map.map((k, v) => MapEntry(k, v)),
-      list: list.map((e) => e).toList(),
-      set: set.map((e) => e).toSet(),
-      nullableSet: nullableSet?.map((e) => e).toSet(),
-      nullableMap: nullableMap?.map((k, v) => MapEntry(k, v)),
-      nullableList: nullableList?.map((e) => e).toList(),
-      nullableString: nullableString);
+      map: map,
+      list: list,
+      set: set,
+      nullableString: nullableString,
+      nullableSet: nullableSet,
+      nullableMap: nullableMap,
+      nullableList: nullableList);
 }
 
 extension DataFieldsDraftExtension on DataFields {
@@ -119,10 +119,10 @@ extension DataFieldsDraftExtension on DataFields {
       map: this.map,
       list: this.list,
       set: this.set,
+      nullableString: this.nullableString,
       nullableSet: this.nullableSet,
       nullableMap: this.nullableMap,
-      nullableList: this.nullableList,
-      nullableString: this.nullableString);
+      nullableList: this.nullableList);
   DataFields produce(void Function(DataFieldsDraft draft) producer) {
     final draft = this.draft();
     producer(draft);
@@ -159,8 +159,8 @@ class FooDraft implements Foo {
       fieldA: fieldA,
       fieldB: fieldB,
       boringInner: boringInner,
-      coolInner: coolInner.save(),
-      dataFields: dataFields.save());
+      coolInner: coolInner,
+      dataFields: dataFields);
 }
 
 extension FooDraftExtension on Foo {

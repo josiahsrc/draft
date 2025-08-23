@@ -343,7 +343,7 @@ String _generateParameterSignature(List<FormalParameterElement> parameters) {
   return parts.join(', ');
 }
 
-/// Helper to generate an argument list for forwarding a method call.
+/// Helper to generate argument list for method calls.
 String _generateArgumentList(List<FormalParameterElement> parameters) {
   final positional = <String>[];
   final named = <String>[];
@@ -352,13 +352,110 @@ String _generateArgumentList(List<FormalParameterElement> parameters) {
     if (p.isNamed) {
       named.add('${p.name}: ${p.name}');
     } else {
-      positional.add(p.name ?? 'dynamic');
+      positional.add(p.name!);
     }
   }
 
   final parts = <String>[];
   if (positional.isNotEmpty) parts.add(positional.join(', '));
   if (named.isNotEmpty) parts.add(named.join(', '));
+
+  return parts.join(', ');
+}
+
+/// Helper to generate constructor parameter signature for draft class based on original constructor.
+String _generateDraftConstructorSignature(ConstructorElement? constructor, List<FieldElement> fields) {
+  if (constructor == null) {
+    // Fallback to named parameters if no constructor found
+    final processors = fields.map(_processorFor).toList();
+    final params = processors.map((p) => p.generateConstructorParameter()).join(', ');
+    return params.isNotEmpty ? '{$params}' : '';
+  }
+
+  final positional = <String>[];
+  final named = <String>[];
+
+  for (final p in constructor.formalParameters) {
+    // Only include parameters that correspond to fields we're processing
+    final field = fields.where((f) => f.name == p.name).firstOrNull;
+    if (field == null) continue;
+    
+    final processor = _processorFor(field);
+    final paramDecl = processor.generateConstructorParameter();
+    
+    if (p.isNamed) {
+      named.add(paramDecl);
+    } else {
+      // For positional parameters, we need to extract just the type and name part
+      final match = RegExp(r'required\s+(.+)').firstMatch(paramDecl);
+      if (match != null) {
+        positional.add(match.group(1)!);
+      } else {
+        positional.add(paramDecl);
+      }
+    }
+  }
+
+  final parts = <String>[];
+  if (positional.isNotEmpty) parts.add(positional.join(', '));
+  if (named.isNotEmpty) parts.add('{${named.join(', ')}}');
+
+  return parts.join(', ');
+}
+
+/// Helper to generate argument list for save() method based on original constructor.
+String _generateSaveArgumentList(ConstructorElement? constructor, List<FieldElement> fields) {
+  if (constructor == null) {
+    // Fallback to named arguments
+    return fields.map((f) => '${f.name}: ${f.name}').join(', ');
+  }
+
+  final positional = <String>[];
+  final named = <String>[];
+
+  for (final p in constructor.formalParameters) {
+    final field = fields.where((f) => f.name == p.name).firstOrNull;
+    if (field == null) continue;
+    
+    if (p.isNamed) {
+      named.add('${p.name}: ${field.name}');
+    } else {
+      positional.add(field.name!);
+    }
+  }
+
+  final parts = <String>[];
+  if (positional.isNotEmpty) parts.add(positional.join(', '));
+  if (named.isNotEmpty) parts.add(named.join(', '));
+
+  return parts.join(', ');
+}
+
+/// Helper to generate argument list for draft() method based on original constructor.
+String _generateDraftArgumentList(ConstructorElement? constructor, List<FieldElement> fields) {
+  if (constructor == null) {
+    // Fallback to named arguments
+    return fields.map((f) => '${f.name}: this.${f.name}').join(', ');
+  }
+
+  final positional = <String>[];
+  final named = <String>[];
+
+  for (final p in constructor.formalParameters) {
+    final field = fields.where((f) => f.name == p.name).firstOrNull;
+    if (field == null) continue;
+    
+    if (p.isNamed) {
+      named.add('${p.name}: this.${field.name}');
+    } else {
+      positional.add('this.${field.name}');
+    }
+  }
+
+  final parts = <String>[];
+  if (positional.isNotEmpty) parts.add(positional.join(', '));
+  if (named.isNotEmpty) parts.add(named.join(', '));
+
   return parts.join(', ');
 }
 
@@ -414,19 +511,22 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
         .map((p) => p.generateGetterSetter())
         .join('\n');
 
+    // Find the original constructor to get parameter structure
+    final originalConstructor = classElement.constructors
+        .where((c) => constructorName == null 
+            ? (c.name?.isEmpty ?? true)
+            : c.name == constructorName)
+        .firstOrNull ?? classElement.unnamedConstructor;
+
     // Constructor parameters and initializers.
-    final constructorParams = processors
-        .map((p) => p.generateConstructorParameter())
-        .join(', ');
+    final constructorParams = _generateDraftConstructorSignature(originalConstructor, fields);
     final initializerList = processors
         .map((p) => p.generateConstructorInitializer())
         .where((init) => init.trim().isNotEmpty)
         .join(',\n    ');
 
-    // Save method assignments.
-    final saveAssignments = processors
-        .map((p) => p.generateSaveAssignment())
-        .join(',\n      ');
+    // Save method arguments based on original constructor.
+    final saveArgs = _generateSaveArgumentList(originalConstructor, fields);
 
     // Determine constructor call for save().
     final constructorCall =
@@ -448,7 +548,7 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
 
     // Generate the constructor WITHOUT generic type parameters in its name.
     if (constructorParams.trim().isNotEmpty) {
-      buffer.write('  $draftClassName({$constructorParams})');
+      buffer.write('  $draftClassName($constructorParams)');
     } else {
       buffer.write('  $draftClassName()');
     }
@@ -460,12 +560,10 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     buffer.writeln();
 
     // Generate the save() method.
-    if (saveAssignments.trim().isNotEmpty) {
+    if (saveArgs.trim().isNotEmpty) {
       buffer.writeln(
-        '  $className$typeParamsUsage save() => $constructorCall(',
+        '  $className$typeParamsUsage save() => $constructorCall($saveArgs);',
       );
-      buffer.writeln('      $saveAssignments');
-      buffer.writeln('  );');
     } else {
       buffer.writeln(
         '  $className$typeParamsUsage save() => $constructorCall();',
@@ -518,7 +616,7 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     buffer.writeln(
       'extension ${className}DraftExtension$typeParamsDeclaration on $className$typeParamsUsage {',
     );
-    final draftArgs = fields.map((f) => '${f.name}: this.${f.name}').join(', ');
+    final draftArgs = _generateDraftArgumentList(originalConstructor, fields);
     if (draftArgs.trim().isNotEmpty) {
       buffer.writeln(
         '  $draftClassName$typeParamsUsage draft() => $draftClassName($draftArgs);',
