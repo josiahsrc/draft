@@ -373,6 +373,7 @@ String _generateDraftConstructorSignature(ConstructorElement? constructor, List<
   }
 
   final positional = <String>[];
+  final optionalPositional = <String>[];
   final named = <String>[];
 
   for (final p in constructor.formalParameters) {
@@ -385,8 +386,14 @@ String _generateDraftConstructorSignature(ConstructorElement? constructor, List<
     
     if (p.isNamed) {
       named.add(paramDecl);
+    } else if (p.isOptionalPositional) {
+      // For optional positional parameters, extract type and name, add default value
+      final match = RegExp(r'required\s+(.+)').firstMatch(paramDecl);
+      final typeAndName = match?.group(1) ?? paramDecl;
+      final defaultValue = p.defaultValueCode ?? 'null';
+      optionalPositional.add('$typeAndName = $defaultValue');
     } else {
-      // For positional parameters, we need to extract just the type and name part
+      // For required positional parameters, remove 'required' keyword
       final match = RegExp(r'required\s+(.+)').firstMatch(paramDecl);
       if (match != null) {
         positional.add(match.group(1)!);
@@ -398,6 +405,7 @@ String _generateDraftConstructorSignature(ConstructorElement? constructor, List<
 
   final parts = <String>[];
   if (positional.isNotEmpty) parts.add(positional.join(', '));
+  if (optionalPositional.isNotEmpty) parts.add('[${optionalPositional.join(', ')}]');
   if (named.isNotEmpty) parts.add('{${named.join(', ')}}');
 
   return parts.join(', ');
