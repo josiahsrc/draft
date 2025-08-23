@@ -18,8 +18,12 @@ class Foo {
 }
 
 // Foo is immutable, but we can edit it with Draft
-Foo foo = Foo(value: 1).draft()..value += 1;
-print(foo.value); // 2
+Foo foo = Foo(1).produce((draft) {
+  draft.value += 1;
+});
+
+// prints 2
+print(foo.value);
 ```
 
 See the [examples](https://github.com/josiahsrc/draft) directory for more info.
@@ -61,40 +65,45 @@ dart run build_runner build --delete-conflicting-outputs
 Now you can use your drafts!
 
 ```dart
-void main() {
-  final foo1 = Foo(value: 1);
-
-  // Use the produce method
-  final foo2 = foo1.produce((draft) {
-    draft.value += 1;
-  });
-  assert(foo2.value == 2);
-
-  // Or create drafts inline
-  final fooDraft = foo.draft();
-  fooDraft.value = 10;
-  final foo3 = fooDraft.save();
-  assert(foo3.value == 10);
-}
+Foo(value: 1).produce((draft) {
+  draft.value += 1;
+});
 ```
 
 ## Use cases
 
 Draft supports a variety of use cases and does its best to use native language features to make it easier to use.
 
-### Cascade notation
+### The `produce` method
 
-Draft conviently supports cascade notation. You can update multiple values inline.
+The produce method exposes a callback that lets you modify a mutable version of the object and returns a new immutable instance.
 
 ```dart
-final foo = Foo(1, 2).draft()
+final Foo foo = Foo(1).produce((draft) {
+  draft.value += 1;
+});
+```
+
+### The `draft` method
+
+If you prefer, you can create a draft from your immutable object and modify it direct. When you're done editing it, call `save()` to get a new immutable instance.
+
+```dart
+// The original immutable object
+final original = Foo(1, 2);
+
+// Create and modify a draft
+final draft = original.draft()
   ..value1 += 1
   ..value2 += 5;
+
+// Convert it back into an immutable object
+Foo foo = draft.save();
 ```
 
 ### Nested drafts
 
-You can nest draftable classes inside of other draftable classes.
+You can nest draftable classes inside of other draftable classes. Draft is smart and lets you modify the nested drafts.
 
 ```dart
 @draft
@@ -132,9 +141,9 @@ final c = C([1, 2, 3]).produce((draft) {
 
 ### Equality
 
-Draft does not provide any sort of equality checking out of the box. If you want equality checking, consider using [equatable](https://pub.dev/packages/equatable)
+Draft is unopinionated and does not provide any sort of equality checking out of the box. If you want equality checking, consider using [equatable](https://pub.dev/packages/equatable)
 
-# Contributing
+## Contributing
 
 If you like the package and want to contribute, feel free to [open and issue or create a PR](https://github.com/josiahsrc/draft/tree/main). I'm always open to suggestions and improvements.
 
