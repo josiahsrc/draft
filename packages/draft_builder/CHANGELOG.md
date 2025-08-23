@@ -2,6 +2,7 @@
 
 - Add support for positional parameters
 - Add support for empty constructors
+- Update documentation
 
 ## 0.0.2
 

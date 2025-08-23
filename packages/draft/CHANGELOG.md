@@ -1,3 +1,7 @@
+## 0.0.10
+
+- Docs
+
 ## 0.0.9
 
 - Move generator into draft_builder package
