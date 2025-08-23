@@ -1,12 +1,41 @@
-# Draft
+<p align="center">
+  <img src="https://raw.githubusercontent.com/josiahsrc/draft/main/assets/header.png" />
+</p>
 
-Immer, but for dart. Convert between immutable and mutable objects.
+Draft is immer, but for dart.
 
-:warning: This package is in its early stages and the API will change.
+Convert any object into a mutable draft, modify it, then convert it back to the immutable version. All while using a comfy API :)
 
-## Usage
+```dart
+import 'package:draft/draft.dart';
 
-Draft is inspired by immer.
+part 'example.draft.dart';
+
+@draft
+class Foo {
+  final int value;
+  const Foo(this.value);
+}
+
+// Foo is immutable, but we can edit it with Draft
+Foo foo = Foo(value: 1).draft()..value += 1;
+print(foo.value); // 2
+```
+
+See the [examples](https://github.com/josiahsrc/draft) directory for more info.
+
+- [Pub package](https://pub.dev/packages/draft)
+- [Source code](https://github.com/josiahsrc/draft/blob/main/packages/draft)
+
+## Set up
+
+First, install it
+
+```sh
+dart pub add dev:build_runner dev:draft_builder draft
+```
+
+Next, define your drafts
 
 ```dart
 import 'package:draft/draft.dart';
@@ -21,7 +50,17 @@ class Foo {
     required this.value,
   });
 }
+```
 
+Then run the build runner
+
+```sh
+dart run build_runner build --delete-conflicting-outputs
+```
+
+Now you can use your drafts!
+
+```dart
 void main() {
   final foo1 = Foo(value: 1);
 
@@ -39,37 +78,66 @@ void main() {
 }
 ```
 
-See the [examples](https://github.com/josiahsrc/draft) directory for more info.
+## Use cases
 
-## Set up
+Draft supports a variety of use cases and does its best to use native language features to make it easier to use.
 
-First install draft and build runner, if you haven't already.
+### Cascade notation
 
-```sh
-dart pub add dev:build_runner dev:draft_builder draft
-```
-
-Next define your drafts.
+Draft conviently supports cascade notation. You can update multiple values inline.
 
 ```dart
-// example.dart
+final foo = Foo(1, 2).draft()
+  ..value1 += 1
+  ..value2 += 5;
+```
 
-import 'package:draft/draft.dart';
+### Nested drafts
 
-part 'example.draft.dart';
+You can nest draftable classes inside of other draftable classes.
+
+```dart
+@draft
+class A {
+  final B b;
+  A(this.b);
+}
 
 @draft
-class Foo {
+class B {
   final int value;
-
-  const Foo({
-    required this.value,
-  });
+  B(this.value);
 }
+
+final a = A(B(1)).produce((draft) {
+  draft.b.value += 1;
+});
 ```
 
-Then run the build runner.
+### Collections
 
-```sh
-dart run build_runner build --delete-conflicting-outputs
+You can modify collections inline. Draft will create copies of the collection, without affecting the original.
+
+```dart
+@draft
+class C {
+  final List<int> values;
+  C(this.values);
+}
+
+final c = C([1, 2, 3]).produce((draft) {
+  draft.values[0] += 1;
+});
 ```
+
+### Equality
+
+Draft does not provide any sort of equality checking out of the box. If you want equality checking, consider using [equatable](https://pub.dev/packages/equatable)
+
+# Contributing
+
+If you like the package and want to contribute, feel free to [open and issue or create a PR](https://github.com/josiahsrc/flutter_zustand/tree/main). I'm always open to suggestions and improvements.
+
+---
+
+keywords: flutter, dart, immutable, mutable, immer, draft
