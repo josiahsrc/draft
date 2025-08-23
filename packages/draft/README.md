@@ -136,7 +136,7 @@ Draft does not provide any sort of equality checking out of the box. If you want
 
 # Contributing
 
-If you like the package and want to contribute, feel free to [open and issue or create a PR](https://github.com/josiahsrc/flutter_zustand/tree/main). I'm always open to suggestions and improvements.
+If you like the package and want to contribute, feel free to [open and issue or create a PR](https://github.com/josiahsrc/draft/tree/main). I'm always open to suggestions and improvements.
 
 ---
 
