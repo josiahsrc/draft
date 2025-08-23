@@ -1,3 +1,4 @@
+#!/bin/bash
 # run dart build runner
 cd "$(dirname "$0")"
 

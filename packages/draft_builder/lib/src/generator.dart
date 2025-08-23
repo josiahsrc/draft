@@ -447,7 +447,11 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     buffer.writeln();
 
     // Generate the constructor WITHOUT generic type parameters in its name.
-    buffer.write('  $draftClassName({$constructorParams})');
+    if (constructorParams.trim().isNotEmpty) {
+      buffer.write('  $draftClassName({$constructorParams})');
+    } else {
+      buffer.write('  $draftClassName()');
+    }
     if (initializerList.trim().isNotEmpty) {
       buffer.writeln(' :\n    $initializerList;');
     } else {
@@ -456,9 +460,17 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     buffer.writeln();
 
     // Generate the save() method.
-    buffer.writeln('  $className$typeParamsUsage save() => $constructorCall(');
-    buffer.writeln('      $saveAssignments');
-    buffer.writeln('  );');
+    if (saveAssignments.trim().isNotEmpty) {
+      buffer.writeln(
+        '  $className$typeParamsUsage save() => $constructorCall(',
+      );
+      buffer.writeln('      $saveAssignments');
+      buffer.writeln('  );');
+    } else {
+      buffer.writeln(
+        '  $className$typeParamsUsage save() => $constructorCall();',
+      );
+    }
     buffer.writeln();
 
     // Forward computed getters.
@@ -506,9 +518,16 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     buffer.writeln(
       'extension ${className}DraftExtension$typeParamsDeclaration on $className$typeParamsUsage {',
     );
-    buffer.writeln(
-      '  $draftClassName$typeParamsUsage draft() => $draftClassName(${fields.map((f) => '${f.name}: this.${f.name}').join(', ')});',
-    );
+    final draftArgs = fields.map((f) => '${f.name}: this.${f.name}').join(', ');
+    if (draftArgs.trim().isNotEmpty) {
+      buffer.writeln(
+        '  $draftClassName$typeParamsUsage draft() => $draftClassName($draftArgs);',
+      );
+    } else {
+      buffer.writeln(
+        '  $draftClassName$typeParamsUsage draft() => $draftClassName();',
+      );
+    }
     buffer.writeln(
       '  $className$typeParamsUsage produce(void Function($draftClassName$typeParamsUsage draft) producer) {',
     );
