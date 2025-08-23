@@ -1,6 +1,6 @@
 name: draft_builder
 description: The build runner for the draft package.
-version: 0.0.3
+version: 0.0.4
 repository: https://github.com/josiahsrc/draft
 
 environment:
@@ -10,7 +10,7 @@ dependencies:
   analyzer: ^8.1.1
   build: ^3.0.2
   source_gen: ^3.1.0
-  draft: ^0.0.9
+  draft: ^0.0.12
 
 dev_dependencies:
   lints: ^6.0.0

@@ -1,3 +1,7 @@
+## 0.0.4
+
+- Upgrade deps
+
 ## 0.0.3
 
 - Add support for positional parameters
