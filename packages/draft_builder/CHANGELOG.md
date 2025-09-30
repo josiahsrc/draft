@@ -1,3 +1,7 @@
+## 0.0.5
+
+- Fix positional params code generation (thanks @tomwyr!)
+
 ## 0.0.4
 
 - Upgrade deps
