@@ -317,7 +317,8 @@ FieldProcessor _processorFor(FieldElement field) {
 
 /// Helper to generate a method’s parameter declaration string.
 String _generateParameterSignature(List<FormalParameterElement> parameters) {
-  final positional = <String>[];
+  final positionalRequired = <String>[];
+  final positionalOptional = <String>[];
   final named = <String>[];
 
   for (final p in parameters) {
@@ -329,15 +330,16 @@ String _generateParameterSignature(List<FormalParameterElement> parameters) {
       named.add('$prefix$typeStr ${p.name}$defaultValue');
     } else {
       if (p.isOptionalPositional) {
-        positional.add('$typeStr ${p.name}$defaultValue');
+        positionalOptional.add('$typeStr ${p.name}$defaultValue');
       } else {
-        positional.add('required $typeStr ${p.name}');
+        positionalRequired.add('$typeStr ${p.name}');
       }
     }
   }
 
   final parts = <String>[];
-  if (positional.isNotEmpty) parts.add(positional.join(', '));
+  if (positionalRequired.isNotEmpty) parts.add(positionalRequired.join(', '));
+  if (positionalOptional.isNotEmpty) parts.add('[${positionalOptional.join(', ')}]');
   if (named.isNotEmpty) parts.add('{${named.join(', ')}}');
 
   return parts.join(', ');
