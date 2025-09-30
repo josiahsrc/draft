@@ -331,7 +331,7 @@ String _generateParameterSignature(List<FormalParameterElement> parameters) {
       if (p.isOptionalPositional) {
         positional.add('$typeStr ${p.name}$defaultValue');
       } else {
-        positional.add('required $typeStr ${p.name}');
+        positional.add('$typeStr ${p.name}');
       }
     }
   }
