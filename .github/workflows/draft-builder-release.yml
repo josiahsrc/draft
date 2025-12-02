@@ -47,9 +47,9 @@ jobs:
         working-directory: ${{ env.PACKAGE_PATH }}
         run: dart pub get
 
-      - name: Run tests
+      - name: Run generator
         working-directory: ${{ env.PACKAGE_PATH }}
-        run: dart test
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Determine next version
         id: version
