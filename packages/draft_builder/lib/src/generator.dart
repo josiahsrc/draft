@@ -491,10 +491,17 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
-    // Process only classes.
-    if (element is! ClassElement) return '';
+    final classElement = switch (element) {
+      // Direct class annotation.
+      ClassElement element => element,
+      // Extension on a class.
+      ExtensionElement(extendedType: DartType(:ClassElement element)) => element,
+      _ => null,
+    };
 
-    final classElement = element;
+    // Process only classes.
+    if (classElement == null) return '';
+
     final className = classElement.name;
     final draftClassName = _draftTypeName(className);
 
