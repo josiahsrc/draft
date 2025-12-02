@@ -148,14 +148,10 @@ Draft is unopinionated and does not provide any sort of equality checking out of
 You can make classes from external packages draftable by annotating an extension on them with `@draft`:
 
 ```dart
+import 'package:a_class/a_class.dart' show A;
+
 @draft
 extension on A {}
-
-// Class defined in an external package.
-class A {
-  final B b;
-  A(this.b);
-}
 ```
 Once annotated, the external class behaves like any other draftable type and supports all Draft features.
 
