@@ -1,3 +1,8 @@
+## 0.0.10
+
+- Added support for making external types draftable, allowing extensions on classes to be annotated with `@draft`.
+- Introduced new tests to verify the functionality of draftable extensions, ensuring correct behavior when creating and manipulating draft instances.
+
 ## 0.0.9
 
 - Introduced a new method for accessing models, improving data retrieval efficiency.
