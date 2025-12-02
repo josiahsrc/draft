@@ -7,17 +7,6 @@ on:
     paths:
       - packages/draft_builder/**
       - .github/workflows/draft-builder-bump.yml
-  workflow_dispatch:
-    inputs:
-      release_type:
-        description: Semver bump to apply
-        required: true
-        default: patch
-        type: choice
-        options:
-          - patch
-          - minor
-          - major
 
 jobs:
   bump:

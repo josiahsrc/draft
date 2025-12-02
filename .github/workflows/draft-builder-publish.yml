@@ -1,15 +1,14 @@
 name: Publish draft_builder
 
 on:
-  push:
-    tags:
-      - 'draft-builder-v*'
+  workflow_dispatch: {}
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: read
     env:
       PACKAGE_PATH: packages/draft_builder
     steps:
