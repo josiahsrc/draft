@@ -339,7 +339,9 @@ String _generateParameterSignature(List<FormalParameterElement> parameters) {
 
   final parts = <String>[];
   if (positionalRequired.isNotEmpty) parts.add(positionalRequired.join(', '));
-  if (positionalOptional.isNotEmpty) parts.add('[${positionalOptional.join(', ')}]');
+  if (positionalOptional.isNotEmpty) {
+    parts.add('[${positionalOptional.join(', ')}]');
+  }
   if (named.isNotEmpty) parts.add('{${named.join(', ')}}');
 
   return parts.join(', ');
@@ -366,11 +368,16 @@ String _generateArgumentList(List<FormalParameterElement> parameters) {
 }
 
 /// Helper to generate constructor parameter signature for draft class based on original constructor.
-String _generateDraftConstructorSignature(ConstructorElement? constructor, List<FieldElement> fields) {
+String _generateDraftConstructorSignature(
+  ConstructorElement? constructor,
+  List<FieldElement> fields,
+) {
   if (constructor == null) {
     // Fallback to named parameters if no constructor found
     final processors = fields.map(_processorFor).toList();
-    final params = processors.map((p) => p.generateConstructorParameter()).join(', ');
+    final params = processors
+        .map((p) => p.generateConstructorParameter())
+        .join(', ');
     return params.isNotEmpty ? '{$params}' : '';
   }
 
@@ -382,10 +389,10 @@ String _generateDraftConstructorSignature(ConstructorElement? constructor, List<
     // Only include parameters that correspond to fields we're processing
     final field = fields.where((f) => f.name == p.name).firstOrNull;
     if (field == null) continue;
-    
+
     final processor = _processorFor(field);
     final paramDecl = processor.generateConstructorParameter();
-    
+
     if (p.isNamed) {
       named.add(paramDecl);
     } else if (p.isOptionalPositional) {
@@ -407,14 +414,19 @@ String _generateDraftConstructorSignature(ConstructorElement? constructor, List<
 
   final parts = <String>[];
   if (positional.isNotEmpty) parts.add(positional.join(', '));
-  if (optionalPositional.isNotEmpty) parts.add('[${optionalPositional.join(', ')}]');
+  if (optionalPositional.isNotEmpty) {
+    parts.add('[${optionalPositional.join(', ')}]');
+  }
   if (named.isNotEmpty) parts.add('{${named.join(', ')}}');
 
   return parts.join(', ');
 }
 
 /// Helper to generate argument list for save() method based on original constructor.
-String _generateSaveArgumentList(ConstructorElement? constructor, List<FieldElement> fields) {
+String _generateSaveArgumentList(
+  ConstructorElement? constructor,
+  List<FieldElement> fields,
+) {
   if (constructor == null) {
     // Fallback to named arguments
     return fields.map((f) => '${f.name}: ${f.name}').join(', ');
@@ -426,7 +438,7 @@ String _generateSaveArgumentList(ConstructorElement? constructor, List<FieldElem
   for (final p in constructor.formalParameters) {
     final field = fields.where((f) => f.name == p.name).firstOrNull;
     if (field == null) continue;
-    
+
     if (p.isNamed) {
       named.add('${p.name}: ${field.name}');
     } else {
@@ -442,7 +454,10 @@ String _generateSaveArgumentList(ConstructorElement? constructor, List<FieldElem
 }
 
 /// Helper to generate argument list for draft() method based on original constructor.
-String _generateDraftArgumentList(ConstructorElement? constructor, List<FieldElement> fields) {
+String _generateDraftArgumentList(
+  ConstructorElement? constructor,
+  List<FieldElement> fields,
+) {
   if (constructor == null) {
     // Fallback to named arguments
     return fields.map((f) => '${f.name}: this.${f.name}').join(', ');
@@ -454,7 +469,7 @@ String _generateDraftArgumentList(ConstructorElement? constructor, List<FieldEle
   for (final p in constructor.formalParameters) {
     final field = fields.where((f) => f.name == p.name).firstOrNull;
     if (field == null) continue;
-    
+
     if (p.isNamed) {
       named.add('${p.name}: this.${field.name}');
     } else {
@@ -522,14 +537,22 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
         .join('\n');
 
     // Find the original constructor to get parameter structure
-    final originalConstructor = classElement.constructors
-        .where((c) => constructorName == null 
-            ? (c.name?.isEmpty ?? true)
-            : c.name == constructorName)
-        .firstOrNull ?? classElement.unnamedConstructor;
+    final originalConstructor =
+        classElement.constructors
+            .where(
+              (c) =>
+                  constructorName == null
+                      ? (c.name?.isEmpty ?? true)
+                      : c.name == constructorName,
+            )
+            .firstOrNull ??
+        classElement.unnamedConstructor;
 
     // Constructor parameters and initializers.
-    final constructorParams = _generateDraftConstructorSignature(originalConstructor, fields);
+    final constructorParams = _generateDraftConstructorSignature(
+      originalConstructor,
+      fields,
+    );
     final initializerList = processors
         .map((p) => p.generateConstructorInitializer())
         .where((init) => init.trim().isNotEmpty)
