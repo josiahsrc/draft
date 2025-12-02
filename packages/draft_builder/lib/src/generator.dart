@@ -495,7 +495,8 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
       // Direct class annotation.
       ClassElement element => element,
       // Extension on a class.
-      ExtensionElement(extendedType: DartType(:ClassElement element)) => element,
+      ExtensionElement(extendedType: DartType(:ClassElement element)) =>
+        element,
       _ => null,
     };
 
