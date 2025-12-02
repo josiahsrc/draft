@@ -10,22 +10,11 @@
 
 ## 0.0.8
 
-- Integrated OpenID Connect (OIDC) for improved authentication.
-- Moved permissions management into the job configuration for better organization.
+- Pipeline fixes
 
 ## 0.0.7
 
-- Initial version of the draft builder package.
-- Implemented basic macro functionality.
-- Added support for nested drafts.
-- Introduced a basic testing framework.
-- Added documentation for the draft builder.
-- Enabled handling of mixins in draft classes.
-- Implemented support for generics in draft classes.
-- Added support for positional optional parameters in constructors.
-- Enhanced code generation for methods with positional parameters.
-- Updated dependencies to the latest versions.
-- Added tests for various scenarios including positional optional parameters and methods with parameters.
+- Pipeline fixes
 
 ## 0.0.6
 
