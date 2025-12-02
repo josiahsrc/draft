@@ -19,16 +19,14 @@ on:
           - minor
           - major
 
-permissions:
-  contents: write
-  models: read
-
 jobs:
   publish:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: write
+      models: read
     env:
       PACKAGE_PATH: packages/draft_builder
       TAG_PREFIX: draft-builder-v
