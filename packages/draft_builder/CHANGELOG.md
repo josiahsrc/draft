@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Upgrade source_gen to 4.0.0 (thanks again @tomwyr!)
+
 ## 0.0.5
 
 - Fix positional params code generation (thanks @tomwyr!)
