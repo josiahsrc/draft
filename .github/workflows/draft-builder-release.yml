@@ -1,0 +1,204 @@
+name: Release draft_builder
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/draft_builder/**
+      - .github/workflows/draft-builder-release.yml
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Semver bump to apply
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  models: read
+  id-token: write
+
+jobs:
+  publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_PATH: packages/draft_builder
+      TAG_PREFIX: draft-builder-v
+      RELEASE_TYPE: ${{ github.event_name == 'workflow_dispatch' && inputs.release_type || 'patch' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.7.0
+
+      - name: Install dependencies
+        working-directory: ${{ env.PACKAGE_PATH }}
+        run: dart pub get
+
+      - name: Run tests
+        working-directory: ${{ env.PACKAGE_PATH }}
+        run: dart test
+
+      - name: Determine next version
+        id: version
+        run: |
+          set -euo pipefail
+
+          PUBSPEC_VERSION="$(awk '/^version:/ {print $2; exit}' "${PACKAGE_PATH}/pubspec.yaml" || true)"
+          LATEST_TAG="$(git describe --tags --match "${TAG_PREFIX}*" --abbrev=0 2>/dev/null || echo '')"
+
+          if [[ -n "${LATEST_TAG}" ]]; then
+            BASE_VERSION="${LATEST_TAG#${TAG_PREFIX}}"
+          else
+            BASE_VERSION="${PUBSPEC_VERSION:-0.0.0}"
+          fi
+
+          if [[ ! "${BASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Base version '${BASE_VERSION}' is not in semver format; defaulting to 0.0.0" >&2
+            BASE_VERSION="0.0.0"
+          fi
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "${BASE_VERSION}"
+
+          case "${RELEASE_TYPE}" in
+            major)
+              ((MAJOR++))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              ((MINOR++))
+              PATCH=0
+              ;;
+            *)
+              RELEASE_TYPE="patch"
+              ((PATCH++))
+              ;;
+          esac
+
+          NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          NEXT_TAG="${TAG_PREFIX}${NEXT_VERSION}"
+
+          if git rev-parse -q --verify "refs/tags/${NEXT_TAG}" >/dev/null; then
+            echo "Tag ${NEXT_TAG} already exists. Aborting." >&2
+            exit 1
+          fi
+
+          if [[ -n "${LATEST_TAG}" ]]; then
+            RELEASE_FROM="${LATEST_TAG}"
+          else
+            mapfile -t ROOT_COMMITS < <(git rev-list --max-parents=0 HEAD)
+            ROOT_COUNT=${#ROOT_COMMITS[@]}
+            if (( ROOT_COUNT > 0 )); then
+              ROOT_INDEX=$((ROOT_COUNT - 1))
+              RELEASE_FROM="${ROOT_COMMITS[ROOT_INDEX]}"
+            else
+              RELEASE_FROM="${GITHUB_SHA}"
+            fi
+          fi
+
+          {
+            echo "value=${NEXT_VERSION}"
+            echo "tag=${NEXT_TAG}"
+            echo "previous_tag=${LATEST_TAG}"
+            echo "release_from=${RELEASE_FROM}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        id: release_notes
+        uses: josiahsrc/ai-release-notes-builder@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          prompt: |
+            Generate a bullet-point changelog list of what changed. Keep each point brief. Focus
+            on high-level improvements and user-facing changes.
+          from: ${{ steps.version.outputs.release_from }}
+          to: ${{ github.sha }}
+          include_start_commit: ${{ steps.version.outputs.previous_tag == '' }}
+          paths: |
+            packages/draft_builder/**
+
+      - name: Update pubspec version
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          set -euo pipefail
+          tmp_file="$(mktemp)"
+          awk -v new_version="${NEXT_VERSION}" '
+            /^version:/ { print "version: " new_version; next }
+            { print }
+          ' "${PACKAGE_PATH}/pubspec.yaml" > "$tmp_file"
+          mv "$tmp_file" "${PACKAGE_PATH}/pubspec.yaml"
+
+      - name: Update CHANGELOG
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          set -euo pipefail
+          notes_file="$(mktemp)"
+          cat <<'NOTES' > "$notes_file"
+          ${{ steps.release_notes.outputs.release-notes }}
+          NOTES
+
+          changelog_tmp="$(mktemp)"
+          {
+            printf '## %s\n\n' "${NEXT_VERSION}"
+            cat "$notes_file"
+            echo
+            cat "${PACKAGE_PATH}/CHANGELOG.md"
+          } > "$changelog_tmp"
+
+          mv "$changelog_tmp" "${PACKAGE_PATH}/CHANGELOG.md"
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit version bump
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          set -euo pipefail
+          git add "${PACKAGE_PATH}/pubspec.yaml" "${PACKAGE_PATH}/CHANGELOG.md"
+          if git status --porcelain | grep .; then
+            git commit -m "chore(release): draft_builder v${NEXT_VERSION}"
+          else
+            echo "No changes to commit"
+          fi
+
+      # - name: Publish
+      #   run: dart pub publish --force
+      #   working-directory: ${{ env.PACKAGE_PATH }}
+
+      # - name: Create release tag
+      #   env:
+      #     NEXT_TAG: ${{ steps.version.outputs.tag }}
+      #   run: git tag "$NEXT_TAG"
+
+      # - name: Push changes
+      #   env:
+      #     NEXT_TAG: ${{ steps.version.outputs.tag }}
+      #   run: |
+      #     git push origin HEAD
+      #     git push origin "$NEXT_TAG"
+
+      # - name: Append release notes to summary
+      #   run: |
+      #     cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+      #     ## draft_builder v${{ steps.version.outputs.value }}
+      #     ${{ steps.release_notes.outputs.release-notes }}
+      #     EOF
