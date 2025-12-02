@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      models: read
     env:
       PACKAGE_PATH: packages/draft_builder
       TAG_PREFIX: draft-builder-v
