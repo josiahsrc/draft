@@ -188,25 +188,25 @@ jobs:
             echo "No changes to commit"
           fi
 
-      # - name: Publish
-      #   run: dart pub publish --force
-      #   working-directory: ${{ env.PACKAGE_PATH }}
+      - name: Create release tag
+        env:
+          NEXT_TAG: ${{ steps.version.outputs.tag }}
+        run: git tag "$NEXT_TAG"
 
-      # - name: Create release tag
-      #   env:
-      #     NEXT_TAG: ${{ steps.version.outputs.tag }}
-      #   run: git tag "$NEXT_TAG"
+      - name: Push changes
+        env:
+          NEXT_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git push origin HEAD
+          git push origin "$NEXT_TAG"
 
-      # - name: Push changes
-      #   env:
-      #     NEXT_TAG: ${{ steps.version.outputs.tag }}
-      #   run: |
-      #     git push origin HEAD
-      #     git push origin "$NEXT_TAG"
+      - name: Append release notes to summary
+        run: |
+          cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          ## draft_builder v${{ steps.version.outputs.value }}
+          ${{ steps.release_notes.outputs.release-notes }}
+          EOF
 
-      # - name: Append release notes to summary
-      #   run: |
-      #     cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"
-      #     ## draft_builder v${{ steps.version.outputs.value }}
-      #     ${{ steps.release_notes.outputs.release-notes }}
-      #     EOF
+      - name: Publish
+        run: dart pub publish --force
+        working-directory: ${{ env.PACKAGE_PATH }}
