@@ -1,3 +1,8 @@
+## 0.0.9
+
+- Introduced a new method for accessing models, improving data retrieval efficiency.
+- Enhanced the structure of actions for better organization and clarity.
+
 ## 0.0.8
 
 - Integrated OpenID Connect (OIDC) for improved authentication.
