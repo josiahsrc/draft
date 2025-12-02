@@ -162,6 +162,7 @@ jobs:
           } > "$changelog_tmp"
 
           mv "$changelog_tmp" "${PACKAGE_PATH}/CHANGELOG.md"
+          cat "${PACKAGE_PATH}/CHANGELOG.md"
 
       - name: Configure git
         run: |
