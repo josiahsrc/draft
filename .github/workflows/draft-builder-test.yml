@@ -1,0 +1,64 @@
+name: Test draft_builder
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - packages/draft_builder/**
+      - .github/workflows/draft-builder-test.yml
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/draft_builder
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.10.1
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Run generator
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run tests
+        run: dart test
+
+  lint:
+    name: Run lint checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/draft_builder
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.10.1
+
+      - name: Install dependencies
+        run: dart pub get
+
+      - name: Run generator
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Verify formatting
+        run: dart format --output none --set-exit-if-changed .
+
+      - name: Run analyzer
+        run: dart analyze .
