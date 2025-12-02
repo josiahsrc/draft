@@ -1,3 +1,8 @@
+## 0.0.12
+
+- Reapplied the "split actions" feature, enhancing the workflow organization.
+- Merged updates from the main branch to ensure compatibility and incorporate recent changes.
+
 ## 0.0.11
 
 - Reverted the "split actions" feature.
