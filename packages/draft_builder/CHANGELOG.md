@@ -1,3 +1,9 @@
+## 0.0.11
+
+- Reverted the "split actions" feature.
+- Improved code formatting and linting in the generator file.
+- Updated the changelog to reflect recent changes, including pipeline fixes.
+
 ## 0.0.10
 
 - Added support for making external types draftable, allowing extensions on classes to be annotated with `@draft`.
