@@ -1,4 +1,4 @@
-name: Bump draft_builder version
+name: Release draft_builder
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - packages/draft_builder/**
-      - .github/workflows/draft-builder-bump.yml
+      - .github/workflows/draft-builder-release.yml
   workflow_dispatch:
     inputs:
       release_type:
@@ -20,10 +20,11 @@ on:
           - major
 
 jobs:
-  bump:
+  publish:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: write
       models: read
     env:
@@ -35,6 +36,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 3.10.1
+
+      - name: Install dependencies
+        working-directory: ${{ env.PACKAGE_PATH }}
+        run: dart pub get
+
+      - name: Run generator
+        working-directory: ${{ env.PACKAGE_PATH }}
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Determine next version
         id: version
@@ -191,3 +205,7 @@ jobs:
           ## draft_builder v${{ steps.version.outputs.value }}
           ${{ steps.release_notes.outputs.release-notes }}
           EOF
+
+      - name: Publish
+        run: dart pub publish --force
+        working-directory: ${{ env.PACKAGE_PATH }}
