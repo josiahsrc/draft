@@ -1,3 +1,8 @@
+## 0.0.8
+
+- Integrated OpenID Connect (OIDC) for improved authentication.
+- Moved permissions management into the job configuration for better organization.
+
 ## 0.0.7
 
 - Initial version of the draft builder package.
