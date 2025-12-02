@@ -143,6 +143,24 @@ final c = C([1, 2, 3]).produce((draft) {
 
 Draft is unopinionated and does not provide any sort of equality checking out of the box. If you want equality checking, consider using [equatable](https://pub.dev/packages/equatable)
 
+### External classes
+
+You can make classes from external packages draftable by annotating an extension on them with `@draft`:
+
+```dart
+import 'package:foo_class/foo_class.dart' show Foo;
+
+@draft
+extension on Foo {}
+```
+Once annotated, the external class behaves like any other draftable type and supports all Draft features:
+
+```dart
+Foo(value: 1).produce((draft) {
+  draft.value += 1;
+});
+```
+
 ## Contributing
 
 If you like the package and want to contribute, feel free to [open and issue or create a PR](https://github.com/josiahsrc/draft/tree/main). I'm always open to suggestions and improvements.
