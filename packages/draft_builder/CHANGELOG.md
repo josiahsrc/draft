@@ -1,3 +1,9 @@
+## 0.0.13
+
+- Added support for forwarding inherited getters and methods from parent classes in the draft generation process.
+- Introduced `_getForwardedGetters` and `_getForwardedMethods` functions to retrieve unique getters and methods from a class and its supertypes, excluding those from the Object type.
+- Created new integration tests to verify the functionality of inherited members in draft classes.
+
 ## 0.0.12
 
 - Reapplied the "split actions" feature, enhancing the workflow organization.
