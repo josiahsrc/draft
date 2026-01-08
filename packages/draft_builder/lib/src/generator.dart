@@ -614,7 +614,8 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
 
     // Forward computed getters.
     final handledNames = fields.map((f) => f.name).toSet();
-    for (final accessor in classElement.getters.where(
+    final forwardedGetters = _getForwardedGetters(classElement);
+    for (final accessor in forwardedGetters.where(
       (a) => !a.isSynthetic && !handledNames.contains(a.name),
     )) {
       final returnType = accessor.returnType.getDisplayString();
@@ -626,7 +627,8 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
     buffer.writeln();
 
     // Forward non-static, public instance methods.
-    for (final method in classElement.methods.where(
+    final forwardedMethods = _getForwardedMethods(classElement);
+    for (final method in forwardedMethods.where(
       (m) => !m.isStatic && m.isPublic && !m.isOperator && m.name != 'save',
     )) {
       final returnType = method.returnType.getDisplayString();
@@ -678,4 +680,31 @@ class DraftGenerator extends GeneratorForAnnotation<Draft> {
 
     return buffer.toString();
   }
+}
+
+/// Returns unique getters from [element] and supertypes, excluding Object type.
+List<GetterElement> _getForwardedGetters(ClassElement element) {
+  return _distinctByDisplayName([
+    ...element.getters,
+    for (var supertype in element.allSupertypes)
+      if (!supertype.isDartCoreObject) ...supertype.getters,
+  ]);
+}
+
+/// Returns unique methods from [element] and supertypes, excluding Object type.
+List<MethodElement> _getForwardedMethods(ClassElement element) {
+  return _distinctByDisplayName([
+    ...element.methods,
+    for (var supertype in element.allSupertypes)
+      if (!supertype.isDartCoreObject) ...supertype.methods,
+  ]);
+}
+
+/// Returns elements with unique display names, keeping the first occurrence.
+List<T> _distinctByDisplayName<T extends Element>(List<T> elements) {
+  final uniqueNames = <String>{};
+  return [
+    for (var element in elements)
+      if (uniqueNames.add(element.displayName)) element,
+  ];
 }
